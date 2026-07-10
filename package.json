@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "concurrently -n web,api -c cyan,magenta \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "vite",
-    "dev:api": "tsx watch --env-file=.env api/dev.ts",
+    "dev:api": "tsx watch --env-file=.env server/dev.ts",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -32,7 +32,7 @@
     "concurrently": "^10.0.3",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.23.0",
-    "typescript": "^7.0.2",
+    "typescript": "^5.9.3",
     "vite": "^8.1.4"
   }
 }

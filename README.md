@@ -100,9 +100,11 @@ configured the app simply shows no sign-in button and stays fully anonymous.
 ## Project structure
 
 ```
-api/                 Fastify API (Vercel serverless entry + local dev server)
+api/
+  index.ts           the ONLY Vercel serverless entry (everything in api/ becomes
+                     a function, so all other server code lives in server/)
+server/              the Fastify application
   app.ts             app factory — registers routes
-  index.ts           Vercel handler
   dev.ts             local :3001 listener
   db.ts              Drizzle + Neon client
   auth.ts            Better Auth config (Google/Facebook/Apple, Drizzle adapter)

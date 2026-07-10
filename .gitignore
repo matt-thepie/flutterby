@@ -16,3 +16,4 @@ drizzle/
 # logs / os cruft
 *.log
 .DS_Store
+.vercel

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { buildApp } from './app';
+import { buildApp } from '../server/app';
 
 // One Fastify instance per warm serverless container; Vercel rewrites all
 // /api/* requests here (see vercel.json) and Fastify routes them internally.
