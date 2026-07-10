@@ -6,10 +6,20 @@ interface Props {
   onLog: (count: number) => void;
   /** Verb on the action pill; "Add" (to the draft report) by default. */
   verb?: string;
+  /**
+   * 'card' (default) may wrap the action pill onto its own row when squeezed;
+   * 'row' stays on one line for compact list rows (e.g. search results).
+   */
+  variant?: 'card' | 'row';
 }
 
 /** A count stepper plus an action button, shared by the grid cards and search results. */
-export function LogControls({ speciesName, onLog, verb = 'Add' }: Props): React.ReactElement {
+export function LogControls({
+  speciesName,
+  onLog,
+  verb = 'Add',
+  variant = 'card',
+}: Props): React.ReactElement {
   const [count, setCount] = useState(1);
 
   const commit = (): void => {
@@ -18,7 +28,7 @@ export function LogControls({ speciesName, onLog, verb = 'Add' }: Props): React.
   };
 
   return (
-    <div className={styles.controls}>
+    <div className={styles.controls} data-variant={variant}>
       <div className={styles.stepper} role="group" aria-label={`Count of ${speciesName}`}>
         <button
           type="button"

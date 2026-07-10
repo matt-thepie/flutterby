@@ -7,6 +7,17 @@
   min-width: 0;
 }
 
+/* Compact list rows (search results): never wrap; the row's text shrinks instead. */
+.controls[data-variant='row'] {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+.controls[data-variant='row'] .log {
+  flex: 0 0 auto;
+}
+
 .stepper {
   display: flex;
   align-items: center;

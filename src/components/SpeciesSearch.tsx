@@ -52,6 +52,7 @@ export function SpeciesSearch({ species, onLog }: Props): React.ReactElement {
                 </div>
                 <LogControls
                   speciesName={s.commonName}
+                  variant="row"
                   onLog={(count) => {
                     onLog(s, count);
                     setQuery('');
