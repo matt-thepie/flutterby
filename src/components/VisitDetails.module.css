@@ -52,8 +52,21 @@
 }
 
 .chevron {
-  color: var(--c-muted);
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  color: var(--c-primary);
+  background: var(--c-primary-tint);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-pill);
   transition: transform 0.15s ease;
+}
+
+.summary:hover .chevron {
+  background: color-mix(in srgb, var(--c-primary) 22%, transparent);
 }
 
 .chevron[data-open='true'] {

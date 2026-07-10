@@ -13,6 +13,7 @@ import { TabBar, type Tab } from './components/TabBar';
 import { VisitDetails } from './components/VisitDetails';
 import { LocationModal } from './components/LocationModal';
 import { InstallPrompt } from './components/InstallPrompt';
+import { NameModal } from './components/NameModal';
 import { ButterflyGrid } from './components/ButterflyGrid';
 import { SpeciesSearch } from './components/SpeciesSearch';
 import { DraftPanel } from './components/DraftPanel';
@@ -115,9 +116,11 @@ export default function App(): React.ReactElement {
     return butterflies.species.filter((s) => s.sortOrder < 500 && !shown.has(s.id));
   }, [regulars, butterflies.species]);
 
-  const buildInput = (): NewReportInput => ({
+  const [askName, setAskName] = useState(false);
+
+  const buildInput = (recorderName: string): NewReportInput => ({
     recorderId: recorder.id,
-    recorderName: draft.meta.recorderName.trim() || null,
+    recorderName,
     // An untouched grid-ref field means "follow the live GPS reading".
     gridRef: draft.meta.gridRef.trim() || geo.gridRef?.text || null,
     latitude: geo.latitude,
@@ -130,11 +133,20 @@ export default function App(): React.ReactElement {
 
   // "Mark as done": the draft stops being an in-progress report. It's uploaded
   // immediately when we can, otherwise queued until the signal returns.
-  const handleMarkDone = async (): Promise<void> => {
+  // A report without a recorder's name is no use to the county recorder, so a
+  // missing name detours through the who-are-you modal first.
+  const handleMarkDone = async (nameOverride?: string): Promise<void> => {
     if (draft.lines.length === 0) return;
-    const input = buildInput();
+    const recorderName = (nameOverride ?? draft.meta.recorderName).trim();
+    if (!recorderName) {
+      setAskName(true);
+      return;
+    }
+    if (nameOverride) draft.setMeta({ ...draft.meta, recorderName });
+
+    const input = buildInput(recorderName);
     const summary = `${draft.lines.length} species, ${draft.totalIndividuals} butterflies`;
-    recorder.setName(draft.meta.recorderName);
+    recorder.setName(recorderName);
     setSaving(true);
 
     try {
@@ -282,6 +294,15 @@ export default function App(): React.ReactElement {
       )}
 
       {showLocationModal && <LocationModal onAllow={enableLocation} onDecline={declineLocation} />}
+      {askName && (
+        <NameModal
+          onSubmit={(name) => {
+            setAskName(false);
+            void handleMarkDone(name);
+          }}
+          onCancel={() => setAskName(false)}
+        />
+      )}
       <InstallPrompt />
 
       <Snackbar
