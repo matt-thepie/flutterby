@@ -1,0 +1,56 @@
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  background: var(--c-surface-2);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+}
+
+.step {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--c-text);
+  border-radius: var(--radius-pill);
+}
+
+.step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.count {
+  min-width: 1.8ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.log {
+  flex: 1;
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  font-weight: 700;
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.log:hover {
+  background: var(--c-primary-strong);
+}
+
+.log:active {
+  transform: scale(0.97);
+}

@@ -1,0 +1,41 @@
+import type {
+  Butterfly,
+  NewSightingInput,
+  Sighting,
+  SightingRow,
+  TopButterfly,
+} from '../types/models';
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => res.statusText);
+    throw new Error(`Request failed (${res.status}): ${detail}`);
+  }
+
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}
+
+const qs = (params: Record<string, string | number>): string =>
+  new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+
+export const api = {
+  getButterflies: (): Promise<Butterfly[]> => request('/api/butterflies'),
+
+  getTopButterflies: (recorderId: string, limit = 12): Promise<TopButterfly[]> =>
+    request(`/api/butterflies/top?${qs({ recorderId, limit })}`),
+
+  getRecentSightings: (recorderId: string, limit = 50): Promise<Sighting[]> =>
+    request(`/api/sightings?${qs({ recorderId, limit })}`),
+
+  createSighting: (input: NewSightingInput): Promise<SightingRow> =>
+    request('/api/sightings', { method: 'POST', body: JSON.stringify(input) }),
+
+  deleteSighting: (id: string, recorderId: string): Promise<void> =>
+    request(`/api/sightings/${id}?${qs({ recorderId })}`, { method: 'DELETE' }),
+};

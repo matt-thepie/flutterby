@@ -1,0 +1,101 @@
+:root {
+  color-scheme: light dark;
+
+  /* palette — meadow greens with an orange-tip accent */
+  --c-bg: #f6f4ec;
+  --c-surface: #ffffff;
+  --c-surface-2: #efece0;
+  --c-text: #23291f;
+  --c-muted: #5f6853;
+  --c-primary: #2f6f4f;
+  --c-primary-strong: #245c40;
+  --c-primary-ink: #ffffff;
+  --c-primary-tint: #e2efe7;
+  --c-accent: #d9822b;
+  --c-border: #ddd9c9;
+  --c-danger: #b23a2e;
+
+  --radius: 14px;
+  --radius-sm: 9px;
+  --radius-pill: 999px;
+  --shadow: 0 1px 2px rgba(20, 30, 15, 0.06), 0 8px 24px rgba(20, 30, 15, 0.07);
+  --shadow-sm: 0 1px 2px rgba(20, 30, 15, 0.08);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+  --maxw: 760px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #171a14;
+    --c-surface: #21241d;
+    --c-surface-2: #2a2e24;
+    --c-text: #ecefe4;
+    --c-muted: #a3ad93;
+    --c-primary: #5aa87d;
+    --c-primary-strong: #6fbb90;
+    --c-primary-ink: #10241a;
+    --c-primary-tint: #26362c;
+    --c-accent: #e59a4c;
+    --c-border: #363a2d;
+    --c-danger: #e0705f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--c-bg);
+  color: var(--c-text);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--c-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+img {
+  max-width: 100%;
+}
