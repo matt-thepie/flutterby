@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { toNodeHandler } from 'better-auth/node';
-import { auth } from '../auth';
+import { auth } from '../auth.js';
 
 /**
  * Mounts Better Auth's own routes at /api/auth/*. Registered as a plugin so the

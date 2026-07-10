@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from './db';
-import * as authSchema from '../db/auth-schema';
+import { db } from './db.js';
+import * as authSchema from '../db/auth-schema.js';
 
 /**
  * Only wire up the social providers whose credentials are actually present, so

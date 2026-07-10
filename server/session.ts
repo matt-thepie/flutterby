@@ -1,5 +1,5 @@
 import type { FastifyRequest } from 'fastify';
-import { auth } from './auth';
+import { auth } from './auth.js';
 
 /** Convert Fastify's plain header bag into a Fetch Headers object for Better Auth. */
 export function toHeaders(req: FastifyRequest): Headers {

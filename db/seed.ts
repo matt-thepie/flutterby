@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { butterflies } from './schema';
-import { BRITISH_BUTTERFLIES, type SpeciesSeed } from './butterflies';
+import { butterflies } from './schema.js';
+import { BRITISH_BUTTERFLIES, type SpeciesSeed } from './butterflies.js';
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is not set. Copy .env.example to .env first.');

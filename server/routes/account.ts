@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { and, eq, isNull } from 'drizzle-orm';
-import { db } from '../db';
-import { sightings } from '../../db/schema';
-import { getUserId } from '../session';
+import { db } from '../db.js';
+import { sightings } from '../../db/schema.js';
+import { getUserId } from '../session.js';
 
 export async function accountRoutes(app: FastifyInstance): Promise<void> {
   // When a recorder signs in, claim this device's anonymous sightings for their

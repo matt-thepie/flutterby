@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { desc, eq, sql } from 'drizzle-orm';
-import { db } from '../db';
-import { butterflies, sightings } from '../../db/schema';
-import { getUserId } from '../session';
+import { db } from '../db.js';
+import { butterflies, sightings } from '../../db/schema.js';
+import { getUserId } from '../session.js';
 
 const speciesColumns = {
   id: butterflies.id,

@@ -8,7 +8,7 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { user } from './auth-schema';
+import { user } from './auth-schema.js';
 
 /**
  * Reference list of British butterfly species. Seeded from db/butterflies.ts
