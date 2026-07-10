@@ -107,14 +107,13 @@ export default function App(): React.ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userName]);
 
-  // The primary grid adapts: a recorder's regulars once they have history,
-  // otherwise the common, garden-friendly starter set.
-  const gridSpecies: GridSpecies[] = useMemo(() => {
-    if (butterflies.top.length > 0) return butterflies.top;
-    return butterflies.species.filter((s) => s.sortOrder < 500);
-  }, [butterflies.top, butterflies.species]);
-
-  const gridHeading = butterflies.top.length > 0 ? 'Your regulars' : 'Common butterflies';
+  // A recorder's regulars lead once they have history, with the common
+  // starter set following (minus anything already shown as a regular).
+  const regulars: GridSpecies[] = butterflies.top;
+  const common: GridSpecies[] = useMemo(() => {
+    const shown = new Set(regulars.map((s) => s.id));
+    return butterflies.species.filter((s) => s.sortOrder < 500 && !shown.has(s.id));
+  }, [regulars, butterflies.species]);
 
   const buildInput = (): NewReportInput => ({
     recorderId: recorder.id,
@@ -232,15 +231,25 @@ export default function App(): React.ReactElement {
             </p>
           )}
 
-          <section className={styles.section} aria-labelledby="grid-heading">
-            <SpeciesSearch species={butterflies.species} onLog={draft.add} />
-            <h2 id="grid-heading" className={styles.sectionTitle}>
-              {gridHeading}
+          <SpeciesSearch species={butterflies.species} onLog={draft.add} />
+
+          {regulars.length > 0 && (
+            <section className={styles.section} aria-labelledby="regulars-heading">
+              <h2 id="regulars-heading" className={styles.sectionTitle}>
+                Your regulars
+              </h2>
+              <ButterflyGrid species={regulars} onLog={draft.add} />
+            </section>
+          )}
+
+          <section className={styles.section} aria-labelledby="common-heading">
+            <h2 id="common-heading" className={styles.sectionTitle}>
+              Common butterflies
             </h2>
             {butterflies.loading ? (
               <p className={styles.hint}>Loading butterflies…</p>
             ) : (
-              <ButterflyGrid species={gridSpecies} onLog={draft.add} />
+              <ButterflyGrid species={common} onLog={draft.add} />
             )}
           </section>
 
