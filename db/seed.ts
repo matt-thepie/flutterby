@@ -14,9 +14,27 @@ const USER_AGENT = 'Flutterby/0.1 (https://github.com/matt-thepie/flutterby; but
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Ask a Commons thumbnail for a larger render so cards stay crisp on retina. */
-function upscale(thumbUrl: string): string {
-  return thumbUrl.replace(/\/\d+px-/, '/480px-');
+// Wikimedia only serves thumbnails at an allowed set of widths (see
+// https://w.wiki/GHai) — anything else returns 400. 500px is on the list and
+// crisp on retina at the card's rendered size.
+const CARD_WIDTH = 500;
+
+interface WikiSummary {
+  thumbnail?: { source?: string };
+  originalimage?: { source?: string; width?: number };
+}
+
+/**
+ * Pick an image URL at a sensible size. Wikimedia 400s if you request a
+ * thumbnail wider than the source, so only ask for CARD_WIDTH when the
+ * original is at least that wide; otherwise use the original itself.
+ */
+function pickImage(data: WikiSummary): string | null {
+  const thumb = data.thumbnail?.source;
+  if (!thumb) return null;
+  const originalWidth = data.originalimage?.width ?? 0;
+  if (originalWidth >= CARD_WIDTH) return thumb.replace(/\/\d+px-/, `/${CARD_WIDTH}px-`);
+  return data.originalimage?.source ?? thumb;
 }
 
 /** Fetch a representative image for a species from the Wikipedia REST summary. */
@@ -30,8 +48,8 @@ async function fetchImageUrl(species: SpeciesSeed): Promise<string | null> {
         headers: { 'User-Agent': USER_AGENT, accept: 'application/json' },
       });
       if (!res.ok) continue;
-      const data = (await res.json()) as { thumbnail?: { source?: string } };
-      if (data.thumbnail?.source) return upscale(data.thumbnail.source);
+      const image = pickImage((await res.json()) as WikiSummary);
+      if (image) return image;
     } catch (err) {
       console.warn(`  ! image lookup failed for "${title}":`, (err as Error).message);
     }
