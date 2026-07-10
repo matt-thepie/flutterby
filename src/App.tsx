@@ -1,28 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './lib/api';
 import { useRecorder } from './lib/recorder';
 import { useSession } from './lib/auth-client';
-import { combineToIso, toDateInput, toTimeInput } from './lib/datetime';
+import { combineToIso } from './lib/datetime';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useButterflies } from './hooks/useButterflies';
 import { useReports } from './hooks/useReports';
 import { useDraftReport } from './hooks/useDraftReport';
-import { LocationBar } from './components/LocationBar';
+import { useUploadQueue } from './hooks/useUploadQueue';
 import { AccountControl } from './components/AccountControl';
 import { TabBar, type Tab } from './components/TabBar';
-import { ReportDetails, type ReportMeta } from './components/ReportDetails';
+import { VisitDetails } from './components/VisitDetails';
 import { ButterflyGrid } from './components/ButterflyGrid';
 import { SpeciesSearch } from './components/SpeciesSearch';
 import { DraftPanel } from './components/DraftPanel';
 import { ReportsList } from './components/ReportsList';
+import { PendingReports } from './components/PendingReports';
 import { Snackbar, type SnackbarState } from './components/Snackbar';
-import type { GridSpecies, Report, ReportPatch } from './types/models';
+import type { GridSpecies, NewReportInput, Report, ReportPatch } from './types/models';
 import styles from './App.module.css';
-
-function freshMeta(): ReportMeta {
-  const now = new Date();
-  return { date: toDateInput(now), time: toTimeInput(now), gridRef: '', locationName: '' };
-}
 
 export default function App(): React.ReactElement {
   const recorder = useRecorder();
@@ -32,17 +28,27 @@ export default function App(): React.ReactElement {
   const draft = useDraftReport();
 
   const [tab, setTab] = useState<Tab>('log');
-  const [meta, setMeta] = useState<ReportMeta>(freshMeta);
   const [saving, setSaving] = useState(false);
   const [savingReportId, setSavingReportId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+
+  const { refreshTop } = butterflies;
+  const { refresh: refreshReports } = reports;
+
+  // Finished reports that couldn't reach the server retry automatically; when
+  // one lands, refresh so it moves from "in progress" to the findings list.
+  const onQueueUploaded = useCallback(() => {
+    refreshReports();
+    refreshTop();
+    setSnackbar({ message: 'Queued report uploaded', undoId: null });
+  }, [refreshReports, refreshTop]);
+  const queue = useUploadQueue(onQueueUploaded);
 
   // Optional sign-in: when a recorder signs in, claim this device's anonymous
   // reports for their account, then reload so the view reflects all devices.
   const { data: session } = useSession();
   const userId = session?.user?.id ?? null;
-  const { refreshTop } = butterflies;
-  const { refresh: refreshReports } = reports;
+  const userName = session?.user?.name ?? null;
   const linkedUserRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -65,6 +71,15 @@ export default function App(): React.ReactElement {
     }
   }, [userId, recorder.id, refreshTop, refreshReports]);
 
+  // Signed in and the draft has no recorder name yet → fill it from the account.
+  const { meta, setMeta } = draft;
+  useEffect(() => {
+    if (userName && !meta.recorderName) {
+      setMeta({ ...meta, recorderName: userName });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userName]);
+
   // The primary grid adapts: a recorder's regulars once they have history,
   // otherwise the common, garden-friendly starter set.
   const gridSpecies: GridSpecies[] = useMemo(() => {
@@ -74,33 +89,42 @@ export default function App(): React.ReactElement {
 
   const gridHeading = butterflies.top.length > 0 ? 'Your regulars' : 'Common butterflies';
 
-  const handleSaveDraft = async (): Promise<void> => {
-    if (draft.lines.length === 0) return;
-    setSaving(true);
-    try {
-      const row = await api.createReport({
-        recorderId: recorder.id,
-        recorderName: recorder.name || null,
-        // An untouched grid-ref field means "follow the live GPS reading".
-        gridRef: meta.gridRef.trim() || geo.gridRef?.text || null,
-        latitude: geo.latitude,
-        longitude: geo.longitude,
-        accuracyM: geo.accuracyM,
-        locationName: meta.locationName.trim() || null,
-        observedAt: combineToIso(meta.date, meta.time),
-        sightings: draft.lines.map((l) => ({ speciesId: l.species.id, count: l.count })),
-      });
+  const buildInput = (): NewReportInput => ({
+    recorderId: recorder.id,
+    recorderName: draft.meta.recorderName.trim() || null,
+    // An untouched grid-ref field means "follow the live GPS reading".
+    gridRef: draft.meta.gridRef.trim() || geo.gridRef?.text || null,
+    latitude: geo.latitude,
+    longitude: geo.longitude,
+    accuracyM: geo.accuracyM,
+    locationName: draft.meta.locationName.trim() || null,
+    observedAt: combineToIso(draft.meta.date, draft.meta.time),
+    sightings: draft.lines.map((l) => ({ speciesId: l.species.id, count: l.count })),
+  });
 
+  // "Mark as done": the draft stops being an in-progress report. It's uploaded
+  // immediately when we can, otherwise queued until the signal returns.
+  const handleMarkDone = async (): Promise<void> => {
+    if (draft.lines.length === 0) return;
+    const input = buildInput();
+    const summary = `${draft.lines.length} species, ${draft.totalIndividuals} butterflies`;
+    recorder.setName(draft.meta.recorderName);
+    setSaving(true);
+
+    try {
+      if (!navigator.onLine) throw new Error('offline');
+      const row = await api.createReport(input);
       draft.clear();
-      setMeta(freshMeta());
-      reports.refresh();
-      butterflies.refreshTop();
+      refreshReports();
+      refreshTop();
+      setSnackbar({ message: `Report saved — ${summary}`, undoId: row.id });
+    } catch {
+      queue.add(input);
+      draft.clear();
       setSnackbar({
-        message: `Report saved — ${draft.lines.length} species, ${draft.totalIndividuals} butterflies`,
-        undoId: row.id,
+        message: `Report finished — ${summary}. It'll upload when you're back in signal.`,
+        undoId: null,
       });
-    } catch (err) {
-      setSnackbar({ message: `Couldn't save — ${(err as Error).message}`, undoId: null });
     } finally {
       setSaving(false);
     }
@@ -111,8 +135,8 @@ export default function App(): React.ReactElement {
     try {
       await api.deleteReport(reportId, recorder.id);
     } finally {
-      reports.refresh();
-      butterflies.refreshTop();
+      refreshReports();
+      refreshTop();
     }
   };
 
@@ -123,8 +147,8 @@ export default function App(): React.ReactElement {
     setSavingReportId(report.id);
     try {
       await api.updateReport(report.id, { ...patch, recorderId: recorder.id });
-      reports.refresh();
-      butterflies.refreshTop();
+      refreshReports();
+      refreshTop();
     } catch (err) {
       setSnackbar({ message: `Couldn't save — ${(err as Error).message}`, undoId: null });
     } finally {
@@ -139,48 +163,36 @@ export default function App(): React.ReactElement {
     } catch (err) {
       setSnackbar({ message: `Couldn't delete — ${(err as Error).message}`, undoId: null });
     } finally {
-      reports.refresh();
-      butterflies.refreshTop();
+      refreshReports();
+      refreshTop();
     }
   };
 
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <div className={styles.brand}>
-          <span className={styles.logo} aria-hidden="true">
-            🦋
-          </span>
-          <h1 className={styles.title}>Flutterby</h1>
-        </div>
-        <div className={styles.headerRight}>
-          <AccountControl />
-          <label className={styles.recorder}>
-            <span className={styles.recorderLabel}>Recorder</span>
-            <input
-              className={styles.recorderInput}
-              type="text"
-              placeholder="Your name"
-              defaultValue={recorder.name}
-              onBlur={(e) => recorder.setName(e.target.value)}
-              autoComplete="name"
-            />
-          </label>
-        </div>
+        <picture>
+          <source srcSet="/logo-full-dark.png" media="(prefers-color-scheme: dark)" />
+          <img
+            className={styles.logo}
+            src="/logo-full.png"
+            alt="Flutterby"
+            width="240"
+            height="96"
+          />
+        </picture>
+        <AccountControl />
       </header>
 
-      <TabBar active={tab} onChange={setTab} reportCount={reports.reports.length} />
+      <TabBar
+        active={tab}
+        onChange={setTab}
+        reportCount={reports.reports.length + queue.pending.length}
+      />
 
       {tab === 'log' ? (
         <main className={styles.main}>
-          <LocationBar geo={geo} />
-
-          <ReportDetails
-            meta={meta}
-            onChange={setMeta}
-            liveGridRef={geo.gridRef?.text ?? null}
-            onUseCurrentLocation={() => setMeta((m) => ({ ...m, gridRef: '' }))}
-          />
+          <VisitDetails meta={draft.meta} onChange={draft.setMeta} geo={geo} />
 
           {butterflies.error && (
             <p className={styles.error} role="alert">
@@ -200,10 +212,18 @@ export default function App(): React.ReactElement {
             )}
           </section>
 
-          <DraftPanel draft={draft} saving={saving} onSave={() => void handleSaveDraft()} />
+          <DraftPanel draft={draft} saving={saving} onSave={() => void handleMarkDone()} />
         </main>
       ) : (
         <main className={styles.main}>
+          <PendingReports
+            draft={draft}
+            queued={queue.pending}
+            online={navigator.onLine}
+            onContinueDraft={() => setTab('log')}
+            onRetryQueue={queue.flush}
+          />
+
           <section className={styles.section} aria-labelledby="reports-heading">
             <h2 id="reports-heading" className={styles.sectionTitle}>
               Your reports

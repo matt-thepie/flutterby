@@ -50,7 +50,7 @@ export function DraftPanel({ draft, saving, onSave }: Props): React.ReactElement
       <button type="button" className={styles.save} onClick={onSave} disabled={saving}>
         {saving
           ? 'Saving…'
-          : `Save report — ${draft.lines.length} species, ${draft.totalIndividuals} butterflies`}
+          : `Mark as done — ${draft.lines.length} species, ${draft.totalIndividuals} butterflies`}
       </button>
     </section>
   );

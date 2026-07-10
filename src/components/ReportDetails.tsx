@@ -6,6 +6,7 @@ export interface ReportMeta {
   time: string; // HH:MM
   gridRef: string;
   locationName: string;
+  recorderName: string;
 }
 
 interface Props {
@@ -31,9 +32,7 @@ export function ReportDetails({
   );
 
   return (
-    <fieldset className={styles.details}>
-      <legend className={styles.legend}>Visit details</legend>
-
+    <div className={styles.details}>
       <div className={styles.row}>
         <label className={styles.field}>
           <span className={styles.label}>Day</span>
@@ -77,16 +76,29 @@ export function ReportDetails({
         )}
       </div>
 
-      <label className={styles.field}>
-        <span className={styles.label}>Location</span>
-        <input
-          type="text"
-          className={styles.input}
-          value={meta.locationName}
-          placeholder="e.g. Home garden, Butser Hill…"
-          onChange={(e) => set({ locationName: e.target.value })}
-        />
-      </label>
-    </fieldset>
+      <div className={styles.row}>
+        <label className={styles.field}>
+          <span className={styles.label}>Location</span>
+          <input
+            type="text"
+            className={styles.input}
+            value={meta.locationName}
+            placeholder="e.g. Home garden, Butser Hill…"
+            onChange={(e) => set({ locationName: e.target.value })}
+          />
+        </label>
+        <label className={styles.field}>
+          <span className={styles.label}>Recorder</span>
+          <input
+            type="text"
+            className={styles.input}
+            value={meta.recorderName}
+            placeholder="Your name"
+            autoComplete="name"
+            onChange={(e) => set({ recorderName: e.target.value })}
+          />
+        </label>
+      </div>
+    </div>
   );
 }

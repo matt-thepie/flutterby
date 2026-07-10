@@ -34,6 +34,7 @@ export function ReportEditor({
     time: toTimeInput(observed),
     gridRef: report.gridRef ?? '',
     locationName: report.locationName ?? '',
+    recorderName: report.recorderName ?? '',
   });
   const [lines, setLines] = useState<EditLine[]>(
     report.sightings.map((s) => ({
@@ -69,6 +70,7 @@ export function ReportEditor({
       observedAt: combineToIso(meta.date, meta.time),
       gridRef: meta.gridRef.trim() || null,
       locationName: meta.locationName.trim() || null,
+      recorderName: meta.recorderName.trim() || null,
       sightings: lines.map((l) => ({ speciesId: l.speciesId, count: l.count })),
     });
   };
