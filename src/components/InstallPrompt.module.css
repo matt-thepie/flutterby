@@ -1,0 +1,120 @@
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(calc(100vw - 2 * var(--space-4)), 480px);
+  padding: var(--space-3) var(--space-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.toastIcon {
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.toastBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.toastTitle {
+  font-size: 0.95rem;
+}
+
+.toastDetail {
+  font-size: 0.8rem;
+  color: var(--c-muted);
+}
+
+.cta {
+  flex-shrink: 0;
+  min-height: 38px;
+  padding: 0 var(--space-4);
+  font-weight: 700;
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.cta:hover {
+  background: var(--c-primary-strong);
+}
+
+.close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--c-muted);
+  border-radius: var(--radius-pill);
+}
+
+.iosDialog {
+  width: min(92vw, 420px);
+  padding: var(--space-5);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: var(--shadow);
+}
+
+.iosDialog::backdrop {
+  background: rgba(15, 20, 10, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.iosTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: var(--space-3);
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.3em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.shareGlyph {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  border: 1.5px solid currentColor;
+  border-radius: 5px;
+  font-size: 0.85em;
+  vertical-align: -0.3em;
+}
+
+.iosActions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.later {
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  font-weight: 600;
+  color: var(--c-muted);
+  background: var(--c-surface-2);
+  border-radius: var(--radius-pill);
+}

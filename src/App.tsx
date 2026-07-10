@@ -11,6 +11,8 @@ import { useUploadQueue } from './hooks/useUploadQueue';
 import { AccountControl } from './components/AccountControl';
 import { TabBar, type Tab } from './components/TabBar';
 import { VisitDetails } from './components/VisitDetails';
+import { LocationModal } from './components/LocationModal';
+import { InstallPrompt } from './components/InstallPrompt';
 import { ButterflyGrid } from './components/ButterflyGrid';
 import { SpeciesSearch } from './components/SpeciesSearch';
 import { DraftPanel } from './components/DraftPanel';
@@ -31,6 +33,31 @@ export default function App(): React.ReactElement {
   const [saving, setSaving] = useState(false);
   const [savingReportId, setSavingReportId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+
+  // Our explanatory prompt goes in front of the browser's location dialog.
+  // "No thanks" is remembered; a "Turn on" button in visit details undoes it.
+  const [locDeclined, setLocDeclined] = useState(() =>
+    Boolean(localStorage.getItem('flutterby.locationDeclined')),
+  );
+  const [locModalResolved, setLocModalResolved] = useState(false);
+  const showLocationModal =
+    !geo.started &&
+    !locDeclined &&
+    !locModalResolved &&
+    (geo.permission === 'prompt' || geo.permission === 'unknown');
+
+  const enableLocation = useCallback(() => {
+    localStorage.removeItem('flutterby.locationDeclined');
+    setLocDeclined(false);
+    setLocModalResolved(true);
+    geo.start();
+  }, [geo]);
+
+  const declineLocation = useCallback(() => {
+    localStorage.setItem('flutterby.locationDeclined', '1');
+    setLocDeclined(true);
+    setLocModalResolved(true);
+  }, []);
 
   const { refreshTop } = butterflies;
   const { refresh: refreshReports } = reports;
@@ -192,7 +219,12 @@ export default function App(): React.ReactElement {
 
       {tab === 'log' ? (
         <main className={styles.main}>
-          <VisitDetails meta={draft.meta} onChange={draft.setMeta} geo={geo} />
+          <VisitDetails
+            meta={draft.meta}
+            onChange={draft.setMeta}
+            geo={geo}
+            onEnableLocation={enableLocation}
+          />
 
           {butterflies.error && (
             <p className={styles.error} role="alert">
@@ -239,6 +271,9 @@ export default function App(): React.ReactElement {
           </section>
         </main>
       )}
+
+      {showLocationModal && <LocationModal onAllow={enableLocation} onDecline={declineLocation} />}
+      <InstallPrompt />
 
       <Snackbar
         snackbar={snackbar}

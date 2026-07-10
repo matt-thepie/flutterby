@@ -7,9 +7,12 @@ interface Props {
   meta: ReportMeta;
   onChange: (meta: ReportMeta) => void;
   geo: GeoState;
+  /** Turn location on (clears any earlier "no thanks" and starts the watch). */
+  onEnableLocation: () => void;
 }
 
 function locationStatus(geo: GeoState): { text: string; tone: 'ok' | 'busy' | 'warn' } {
+  if (!geo.started) return { text: 'Location off — grid refs by hand', tone: 'warn' };
   switch (geo.status) {
     case 'ready':
       return geo.gridRef
@@ -18,11 +21,11 @@ function locationStatus(geo: GeoState): { text: string; tone: 'ok' | 'busy' | 'w
     case 'locating':
       return { text: 'Getting your location…', tone: 'busy' };
     case 'denied':
-      return { text: 'Location blocked — enter a grid ref by hand', tone: 'warn' };
+      return { text: 'Location blocked in browser settings — enter grid refs by hand', tone: 'warn' };
     case 'unavailable':
       return { text: 'No location on this device', tone: 'warn' };
     case 'error':
-      return { text: 'Location error — try refresh', tone: 'warn' };
+      return { text: 'Location error — try again', tone: 'warn' };
     default:
       return { text: 'Waiting for location…', tone: 'busy' };
   }
@@ -33,7 +36,7 @@ function locationStatus(geo: GeoState): { text: string; tone: 'ok' | 'busy' | 'w
  * is being acquired); once a GPS fix lands it collapses to a one-line summary
  * so the butterflies take the stage. Tap to reopen at any time.
  */
-export function VisitDetails({ meta, onChange, geo }: Props): React.ReactElement {
+export function VisitDetails({ meta, onChange, geo, onEnableLocation }: Props): React.ReactElement {
   const [open, setOpen] = useState(true);
   const userToggled = useRef(false);
   const status = locationStatus(geo);
@@ -78,11 +81,16 @@ export function VisitDetails({ meta, onChange, geo }: Props): React.ReactElement
 
       {open && (
         <div className={styles.body}>
-          {(geo.status !== 'ready' || !geo.gridRef) && (
+          {(!geo.started || geo.status !== 'ready' || !geo.gridRef) && (
             <p className={styles.status} data-tone={status.tone}>
               {status.text}
-              {(geo.status === 'error' || geo.status === 'denied') && (
-                <button type="button" className={styles.retry} onClick={geo.refresh}>
+              {!geo.started && (
+                <button type="button" className={styles.retry} onClick={onEnableLocation}>
+                  Turn on
+                </button>
+              )}
+              {geo.started && geo.status === 'error' && (
+                <button type="button" className={styles.retry} onClick={geo.start}>
                   Retry
                 </button>
               )}
