@@ -38,4 +38,10 @@ export const api = {
 
   deleteSighting: (id: string, recorderId: string): Promise<void> =>
     request(`/api/sightings/${id}?${qs({ recorderId })}`, { method: 'DELETE' }),
+
+  getConfig: (): Promise<{ providers: string[] }> => request('/api/config'),
+
+  // Claim this device's anonymous sightings for the signed-in account.
+  linkDevice: (recorderId: string): Promise<{ linked: number }> =>
+    request('/api/link', { method: 'POST', body: JSON.stringify({ recorderId }) }),
 };

@@ -8,6 +8,7 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
+import { user } from './auth-schema';
 
 /**
  * Reference list of British butterfly species. Seeded from db/butterflies.ts
@@ -50,11 +51,19 @@ export const sightings = pgTable(
     recorderId: uuid('recorder_id').notNull(),
     recorderName: text('recorder_name'),
 
+    /**
+     * Set once a recorder signs in (optional — login is only needed for
+     * multi-device sync). Anonymous sightings have this null; signing in claims
+     * them (see POST /api/link) and future sightings carry the account id.
+     */
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+
     notes: text('notes'),
     observedAt: timestamp('observed_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('sightings_recorder_idx').on(t.recorderId),
+    index('sightings_user_idx').on(t.userId),
     index('sightings_species_idx').on(t.speciesId),
     index('sightings_observed_idx').on(t.observedAt),
   ],

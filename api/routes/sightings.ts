@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, or } from 'drizzle-orm';
 import { db } from '../db';
 import { butterflies, sightings } from '../../db/schema';
+import { getUserId } from '../session';
 
 interface SightingBody {
   speciesId: number;
@@ -38,6 +39,7 @@ export async function sightingRoutes(app: FastifyInstance): Promise<void> {
   // Record a sighting.
   app.post('/api/sightings', { schema: { body: sightingBodySchema } }, async (req, reply) => {
     const body = req.body as SightingBody;
+    const userId = await getUserId(req);
 
     const [row] = await db
       .insert(sightings)
@@ -46,6 +48,7 @@ export async function sightingRoutes(app: FastifyInstance): Promise<void> {
         count: body.count ?? 1,
         recorderId: body.recorderId,
         recorderName: body.recorderName ?? null,
+        userId,
         gridRef: body.gridRef ?? null,
         latitude: body.latitude ?? null,
         longitude: body.longitude ?? null,
@@ -76,6 +79,12 @@ export async function sightingRoutes(app: FastifyInstance): Promise<void> {
     },
     async (req) => {
       const { recorderId, limit = 50 } = req.query as { recorderId: string; limit?: number };
+      const userId = await getUserId(req);
+
+      // Signed in → the account's sightings across devices; otherwise this device's.
+      const scope = userId
+        ? eq(sightings.userId, userId)
+        : eq(sightings.recorderId, recorderId);
 
       return db
         .select({
@@ -93,7 +102,7 @@ export async function sightingRoutes(app: FastifyInstance): Promise<void> {
         })
         .from(sightings)
         .innerJoin(butterflies, eq(sightings.speciesId, butterflies.id))
-        .where(eq(sightings.recorderId, recorderId))
+        .where(scope)
         .orderBy(desc(sightings.observedAt))
         .limit(limit);
     },
@@ -119,10 +128,17 @@ export async function sightingRoutes(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const { recorderId } = req.query as { recorderId: string };
+      const userId = await getUserId(req);
+
+      // A recorder may delete a sighting made on this device, or any sighting
+      // belonging to their signed-in account.
+      const owns = userId
+        ? or(eq(sightings.recorderId, recorderId), eq(sightings.userId, userId))
+        : eq(sightings.recorderId, recorderId);
 
       const deleted = await db
         .delete(sightings)
-        .where(and(eq(sightings.id, id), eq(sightings.recorderId, recorderId)))
+        .where(and(eq(sightings.id, id), owns))
         .returning({ id: sightings.id });
 
       if (deleted.length === 0) {

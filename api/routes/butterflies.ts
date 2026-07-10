@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { desc, eq, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { butterflies, sightings } from '../../db/schema';
+import { getUserId } from '../session';
 
 const speciesColumns = {
   id: butterflies.id,
@@ -39,7 +40,12 @@ export async function butterflyRoutes(app: FastifyInstance): Promise<void> {
     },
     async (req) => {
       const { recorderId, limit = 12 } = req.query as { recorderId: string; limit?: number };
+      const userId = await getUserId(req);
       const total = sql<number>`sum(${sightings.count})`.mapWith(Number);
+
+      const scope = userId
+        ? eq(sightings.userId, userId)
+        : eq(sightings.recorderId, recorderId);
 
       return db
         .select({
@@ -49,7 +55,7 @@ export async function butterflyRoutes(app: FastifyInstance): Promise<void> {
         })
         .from(sightings)
         .innerJoin(butterflies, eq(sightings.speciesId, butterflies.id))
-        .where(eq(sightings.recorderId, recorderId))
+        .where(scope)
         .groupBy(butterflies.id)
         .orderBy(desc(total))
         .limit(limit);

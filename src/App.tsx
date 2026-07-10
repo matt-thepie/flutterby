@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './lib/api';
 import { useRecorder } from './lib/recorder';
+import { useSession } from './lib/auth-client';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useButterflies } from './hooks/useButterflies';
 import { useSightings } from './hooks/useSightings';
 import { LocationBar } from './components/LocationBar';
+import { AccountControl } from './components/AccountControl';
 import { ButterflyGrid } from './components/ButterflyGrid';
 import { SpeciesSearch } from './components/SpeciesSearch';
 import { RecentSightings } from './components/RecentSightings';
@@ -18,6 +20,34 @@ export default function App(): React.ReactElement {
   const butterflies = useButterflies(recorder.id);
   const sightings = useSightings(recorder.id);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+
+  // Optional sign-in: when a recorder signs in, claim this device's anonymous
+  // sightings for their account, then reload so the view reflects all devices.
+  const { data: session } = useSession();
+  const userId = session?.user?.id ?? null;
+  const { refreshTop } = butterflies;
+  const { refresh: refreshSightings } = sightings;
+  const linkedUserRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (userId) {
+      if (linkedUserRef.current === userId) return;
+      linkedUserRef.current = userId;
+      api
+        .linkDevice(recorder.id)
+        .catch(() => {
+          /* linking is best-effort; the sightings still load below */
+        })
+        .finally(() => {
+          refreshTop();
+          refreshSightings();
+        });
+    } else {
+      linkedUserRef.current = null;
+      refreshTop();
+      refreshSightings();
+    }
+  }, [userId, recorder.id, refreshTop, refreshSightings]);
 
   // The primary grid adapts: a recorder's regulars once they have history,
   // otherwise the common, garden-friendly starter set.
@@ -86,17 +116,20 @@ export default function App(): React.ReactElement {
           </span>
           <h1 className={styles.title}>Flutterby</h1>
         </div>
-        <label className={styles.recorder}>
-          <span className={styles.recorderLabel}>Recorder</span>
-          <input
-            className={styles.recorderInput}
-            type="text"
-            placeholder="Your name"
-            defaultValue={recorder.name}
-            onBlur={(e) => recorder.setName(e.target.value)}
-            autoComplete="name"
-          />
-        </label>
+        <div className={styles.headerRight}>
+          <AccountControl />
+          <label className={styles.recorder}>
+            <span className={styles.recorderLabel}>Recorder</span>
+            <input
+              className={styles.recorderInput}
+              type="text"
+              placeholder="Your name"
+              defaultValue={recorder.name}
+              onBlur={(e) => recorder.setName(e.target.value)}
+              autoComplete="name"
+            />
+          </label>
+        </div>
       </header>
 
       <LocationBar geo={geo} />
