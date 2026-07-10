@@ -1,8 +1,9 @@
 import type {
   Butterfly,
-  NewSightingInput,
-  Sighting,
-  SightingRow,
+  NewReportInput,
+  Report,
+  ReportPatch,
+  ReportRow,
   TopButterfly,
 } from '../types/models';
 
@@ -30,18 +31,21 @@ export const api = {
   getTopButterflies: (recorderId: string, limit = 12): Promise<TopButterfly[]> =>
     request(`/api/butterflies/top?${qs({ recorderId, limit })}`),
 
-  getRecentSightings: (recorderId: string, limit = 50): Promise<Sighting[]> =>
-    request(`/api/sightings?${qs({ recorderId, limit })}`),
+  getReports: (recorderId: string, limit = 50): Promise<Report[]> =>
+    request(`/api/reports?${qs({ recorderId, limit })}`),
 
-  createSighting: (input: NewSightingInput): Promise<SightingRow> =>
-    request('/api/sightings', { method: 'POST', body: JSON.stringify(input) }),
+  createReport: (input: NewReportInput): Promise<ReportRow> =>
+    request('/api/reports', { method: 'POST', body: JSON.stringify(input) }),
 
-  deleteSighting: (id: string, recorderId: string): Promise<void> =>
-    request(`/api/sightings/${id}?${qs({ recorderId })}`, { method: 'DELETE' }),
+  updateReport: (id: string, patch: ReportPatch): Promise<ReportRow> =>
+    request(`/api/reports/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+
+  deleteReport: (id: string, recorderId: string): Promise<void> =>
+    request(`/api/reports/${id}?${qs({ recorderId })}`, { method: 'DELETE' }),
 
   getConfig: (): Promise<{ providers: string[] }> => request('/api/config'),
 
-  // Claim this device's anonymous sightings for the signed-in account.
+  // Claim this device's anonymous reports for the signed-in account.
   linkDevice: (recorderId: string): Promise<{ linked: number }> =>
     request('/api/link', { method: 'POST', body: JSON.stringify({ recorderId }) }),
 };

@@ -16,43 +16,45 @@ export interface TopButterfly extends Butterfly {
 /** A butterfly shown in the grid, optionally carrying the recorder's running total. */
 export type GridSpecies = Butterfly & { total?: number };
 
-export interface Sighting {
-  id: string;
+/** One species line within a report. */
+export interface SightingLine {
   speciesId: number;
+  count: number;
   commonName: string;
   scientificName: string;
-  count: number;
-  gridRef: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  accuracyM: number | null;
-  notes: string | null;
-  observedAt: string;
+  imageUrl: string | null;
 }
 
-/** The raw row returned by POST /api/sightings (no species join). */
-export interface SightingRow {
+/** A recording visit: one place & time plus the species seen there. */
+export interface Report {
   id: string;
-  speciesId: number;
-  count: number;
-  gridRef: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  accuracyM: number | null;
   recorderId: string;
   recorderName: string | null;
+  gridRef: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  accuracyM: number | null;
+  locationName: string | null;
   notes: string | null;
   observedAt: string;
+  createdAt: string;
+  sightings: SightingLine[];
 }
 
-export interface NewSightingInput {
-  speciesId: number;
-  count: number;
+/** The raw row returned by POST /api/reports (no sightings join). */
+export type ReportRow = Omit<Report, 'sightings'>;
+
+export interface NewReportInput {
   recorderId: string;
   recorderName?: string | null;
   gridRef?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   accuracyM?: number | null;
+  locationName?: string | null;
   notes?: string | null;
+  observedAt?: string | null;
+  sightings: Array<{ speciesId: number; count: number }>;
 }
+
+export type ReportPatch = Partial<Omit<NewReportInput, 'recorderId'>> & { recorderId: string };

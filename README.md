@@ -8,15 +8,23 @@ garden?_" problem: every record carries a real location.
 
 ## What it does
 
+Two sections:
+
+**Log** — record a visit as a *report*: an OS grid reference (derived
+automatically from GPS, editable), day and time (default now), and a free-text
+location, then tap butterflies to tally the species seen. Save commits the
+whole visit in one go (with one-tap undo).
+
+**Reports** — the recorder's own historic reports, each openable to edit the
+details, adjust counts, add/remove species, or delete the visit.
+
 - **Automatic OS grid reference** from the device's location (WGS84 → OSGB36 →
   National Grid), with precision that adapts to GPS accuracy.
-- **Tap to log** a butterfly, or use the stepper to log several at once.
-- **Every British butterfly** (60 species) is searchable by common or
-  scientific name.
-- A **starter grid** of common, garden-friendly species on first use, which is
-  replaced over time by **the recorder's own most-logged species**.
+- **Every British butterfly** (64 species) searchable by common or scientific
+  name — the search sits directly above the grid.
+- A **starter grid** of common, garden-friendly species on first use, replaced
+  over time by **the recorder's own most-logged species**.
 - Species photos from **Wikimedia Commons** (fetched at seed time).
-- **Recent sightings** list with one-tap undo.
 
 ## Stack
 
@@ -125,9 +133,12 @@ src/
 ## Data model
 
 - **butterflies** — the reference species list (name, family, image, sort order).
-- **sightings** — one observation: species, count, `grid_ref` **plus** raw
-  `latitude`/`longitude`/`accuracy_m` (nothing is lost), an anonymous
-  per-device `recorder_id`, optional recorder name, notes, and a timestamp.
+- **reports** — one recording visit: `grid_ref` **plus** raw
+  `latitude`/`longitude`/`accuracy_m` (nothing is lost), a free-text
+  `location_name`, an anonymous per-device `recorder_id`, optional recorder
+  name, notes, and the visit timestamp.
+- **sightings** — the species lines within a report: species + count
+  (cascade-deleted with their report).
 
 ## TODO
 

@@ -2,7 +2,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { enabledProviders } from './auth.js';
 import { authRoutes } from './routes/auth.js';
 import { butterflyRoutes } from './routes/butterflies.js';
-import { sightingRoutes } from './routes/sightings.js';
+import { reportRoutes } from './routes/reports.js';
 import { accountRoutes } from './routes/account.js';
 
 export function buildApp(): FastifyInstance {
@@ -19,7 +19,7 @@ export function buildApp(): FastifyInstance {
 
   app.register(authRoutes);
   app.register(butterflyRoutes);
-  app.register(sightingRoutes);
+  app.register(reportRoutes);
   app.register(accountRoutes);
 
   return app;

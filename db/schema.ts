@@ -29,46 +29,64 @@ export const butterflies = pgTable('butterflies', {
 });
 
 /**
- * A single field observation: a species, a count, and where/when it was seen.
- * Location is stored three ways — the human-friendly OS grid ref plus the raw
- * lat/lon and GPS accuracy — so nothing is lost and precision can be re-derived.
+ * A recording visit: one place and time, holding any number of species
+ * sightings. Location is stored three ways — the human-friendly OS grid ref
+ * plus the raw lat/lon and GPS accuracy — so nothing is lost and precision can
+ * be re-derived.
  */
-export const sightings = pgTable(
-  'sightings',
+export const reports = pgTable(
+  'reports',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    speciesId: integer('species_id')
-      .notNull()
-      .references(() => butterflies.id),
-    count: integer('count').notNull().default(1),
+
+    /** Anonymous per-device id (localStorage). Groups a recorder's own history. */
+    recorderId: uuid('recorder_id').notNull(),
+    recorderName: text('recorder_name'),
+    /**
+     * Set once a recorder signs in (optional — login is only needed for
+     * multi-device sync). Anonymous reports have this null; signing in claims
+     * them (see POST /api/link) and future reports carry the account id.
+     */
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
 
     gridRef: text('grid_ref'),
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
     accuracyM: doublePrecision('accuracy_m'),
-
-    /** Anonymous per-device id (localStorage). Groups a recorder's own history. */
-    recorderId: uuid('recorder_id').notNull(),
-    recorderName: text('recorder_name'),
-
-    /**
-     * Set once a recorder signs in (optional — login is only needed for
-     * multi-device sync). Anonymous sightings have this null; signing in claims
-     * them (see POST /api/link) and future sightings carry the account id.
-     */
-    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    /** Free-text place name, e.g. "Home garden" or "Butser Hill". */
+    locationName: text('location_name'),
 
     notes: text('notes'),
+    /** When the visit happened (editable day + time in the UI). */
     observedAt: timestamp('observed_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index('sightings_recorder_idx').on(t.recorderId),
-    index('sightings_user_idx').on(t.userId),
+    index('reports_recorder_idx').on(t.recorderId),
+    index('reports_user_idx').on(t.userId),
+    index('reports_observed_idx').on(t.observedAt),
+  ],
+);
+
+/** One species line within a report: which butterfly, and how many. */
+export const sightings = pgTable(
+  'sightings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    reportId: uuid('report_id')
+      .notNull()
+      .references(() => reports.id, { onDelete: 'cascade' }),
+    speciesId: integer('species_id')
+      .notNull()
+      .references(() => butterflies.id),
+    count: integer('count').notNull().default(1),
+  },
+  (t) => [
+    index('sightings_report_idx').on(t.reportId),
     index('sightings_species_idx').on(t.speciesId),
-    index('sightings_observed_idx').on(t.observedAt),
   ],
 );
 
 export type Butterfly = typeof butterflies.$inferSelect;
-export type NewSighting = typeof sightings.$inferInsert;
+export type Report = typeof reports.$inferSelect;
 export type Sighting = typeof sightings.$inferSelect;

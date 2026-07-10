@@ -3,7 +3,7 @@ import styles from './Snackbar.module.css';
 
 export interface SnackbarState {
   message: string;
-  sightingId: string | null;
+  undoId: string | null;
 }
 
 interface Props {
@@ -24,11 +24,11 @@ export function Snackbar({ snackbar, onUndo, onDismiss }: Props): React.ReactEle
   return (
     <div className={styles.snackbar} role="status">
       <span className={styles.message}>{snackbar.message}</span>
-      {snackbar.sightingId && (
+      {snackbar.undoId && (
         <button
           type="button"
           className={styles.undo}
-          onClick={() => onUndo(snackbar.sightingId as string)}
+          onClick={() => onUndo(snackbar.undoId as string)}
         >
           Undo
         </button>

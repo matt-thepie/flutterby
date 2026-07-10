@@ -4,10 +4,12 @@ import styles from './LogControls.module.css';
 interface Props {
   speciesName: string;
   onLog: (count: number) => void;
+  /** Verb on the action pill; "Add" (to the draft report) by default. */
+  verb?: string;
 }
 
-/** A count stepper plus a log button, shared by the grid cards and search results. */
-export function LogControls({ speciesName, onLog }: Props): React.ReactElement {
+/** A count stepper plus an action button, shared by the grid cards and search results. */
+export function LogControls({ speciesName, onLog, verb = 'Add' }: Props): React.ReactElement {
   const [count, setCount] = useState(1);
 
   const commit = (): void => {
@@ -40,7 +42,7 @@ export function LogControls({ speciesName, onLog }: Props): React.ReactElement {
         </button>
       </div>
       <button type="button" className={styles.log} onClick={commit}>
-        Log {count}
+        {verb} {count}
       </button>
     </div>
   );

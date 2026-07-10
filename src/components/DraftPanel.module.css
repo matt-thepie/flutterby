@@ -1,0 +1,95 @@
+.panel {
+  position: sticky;
+  bottom: var(--space-3);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 32vh;
+  overflow-y: auto;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+
+.name {
+  flex: 1;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  background: var(--c-surface-2);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+}
+
+.step {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+}
+
+.count {
+  min-width: 2.2ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.remove {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--c-muted);
+  border-radius: var(--radius-pill);
+}
+
+.remove:hover {
+  color: var(--c-danger);
+}
+
+.save {
+  min-height: 48px;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
+  border-radius: var(--radius-sm);
+}
+
+.save:hover {
+  background: var(--c-primary-strong);
+}
+
+.save:disabled {
+  opacity: 0.6;
+}

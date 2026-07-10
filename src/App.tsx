@@ -2,31 +2,47 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './lib/api';
 import { useRecorder } from './lib/recorder';
 import { useSession } from './lib/auth-client';
+import { combineToIso, toDateInput, toTimeInput } from './lib/datetime';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useButterflies } from './hooks/useButterflies';
-import { useSightings } from './hooks/useSightings';
+import { useReports } from './hooks/useReports';
+import { useDraftReport } from './hooks/useDraftReport';
 import { LocationBar } from './components/LocationBar';
 import { AccountControl } from './components/AccountControl';
+import { TabBar, type Tab } from './components/TabBar';
+import { ReportDetails, type ReportMeta } from './components/ReportDetails';
 import { ButterflyGrid } from './components/ButterflyGrid';
 import { SpeciesSearch } from './components/SpeciesSearch';
-import { RecentSightings } from './components/RecentSightings';
+import { DraftPanel } from './components/DraftPanel';
+import { ReportsList } from './components/ReportsList';
 import { Snackbar, type SnackbarState } from './components/Snackbar';
-import type { Butterfly, GridSpecies, Sighting } from './types/models';
+import type { GridSpecies, Report, ReportPatch } from './types/models';
 import styles from './App.module.css';
+
+function freshMeta(): ReportMeta {
+  const now = new Date();
+  return { date: toDateInput(now), time: toTimeInput(now), gridRef: '', locationName: '' };
+}
 
 export default function App(): React.ReactElement {
   const recorder = useRecorder();
   const geo = useGeolocation();
   const butterflies = useButterflies(recorder.id);
-  const sightings = useSightings(recorder.id);
+  const reports = useReports(recorder.id);
+  const draft = useDraftReport();
+
+  const [tab, setTab] = useState<Tab>('log');
+  const [meta, setMeta] = useState<ReportMeta>(freshMeta);
+  const [saving, setSaving] = useState(false);
+  const [savingReportId, setSavingReportId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
 
   // Optional sign-in: when a recorder signs in, claim this device's anonymous
-  // sightings for their account, then reload so the view reflects all devices.
+  // reports for their account, then reload so the view reflects all devices.
   const { data: session } = useSession();
   const userId = session?.user?.id ?? null;
   const { refreshTop } = butterflies;
-  const { refresh: refreshSightings } = sightings;
+  const { refresh: refreshReports } = reports;
   const linkedUserRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -36,18 +52,18 @@ export default function App(): React.ReactElement {
       api
         .linkDevice(recorder.id)
         .catch(() => {
-          /* linking is best-effort; the sightings still load below */
+          /* linking is best-effort; the reports still load below */
         })
         .finally(() => {
           refreshTop();
-          refreshSightings();
+          refreshReports();
         });
     } else {
       linkedUserRef.current = null;
       refreshTop();
-      refreshSightings();
+      refreshReports();
     }
-  }, [userId, recorder.id, refreshTop, refreshSightings]);
+  }, [userId, recorder.id, refreshTop, refreshReports]);
 
   // The primary grid adapts: a recorder's regulars once they have history,
   // otherwise the common, garden-friendly starter set.
@@ -58,52 +74,73 @@ export default function App(): React.ReactElement {
 
   const gridHeading = butterflies.top.length > 0 ? 'Your regulars' : 'Common butterflies';
 
-  const handleLog = async (species: Butterfly, count: number): Promise<void> => {
+  const handleSaveDraft = async (): Promise<void> => {
+    if (draft.lines.length === 0) return;
+    setSaving(true);
     try {
-      const row = await api.createSighting({
-        speciesId: species.id,
-        count,
+      const row = await api.createReport({
         recorderId: recorder.id,
         recorderName: recorder.name || null,
-        gridRef: geo.gridRef?.text ?? null,
+        // An untouched grid-ref field means "follow the live GPS reading".
+        gridRef: meta.gridRef.trim() || geo.gridRef?.text || null,
         latitude: geo.latitude,
         longitude: geo.longitude,
         accuracyM: geo.accuracyM,
+        locationName: meta.locationName.trim() || null,
+        observedAt: combineToIso(meta.date, meta.time),
+        sightings: draft.lines.map((l) => ({ speciesId: l.species.id, count: l.count })),
       });
 
-      const sighting: Sighting = {
-        id: row.id,
-        speciesId: species.id,
-        commonName: species.commonName,
-        scientificName: species.scientificName,
-        count: row.count,
-        gridRef: row.gridRef,
-        latitude: row.latitude,
-        longitude: row.longitude,
-        accuracyM: row.accuracyM,
-        notes: row.notes,
-        observedAt: row.observedAt,
-      };
-
-      sightings.addLocal(sighting);
+      draft.clear();
+      setMeta(freshMeta());
+      reports.refresh();
       butterflies.refreshTop();
       setSnackbar({
-        message: `Logged ${count} ${species.commonName}${count > 1 ? 's' : ''}`,
-        sightingId: row.id,
+        message: `Report saved — ${draft.lines.length} species, ${draft.totalIndividuals} butterflies`,
+        undoId: row.id,
       });
     } catch (err) {
-      setSnackbar({ message: `Couldn't save — ${(err as Error).message}`, sightingId: null });
+      setSnackbar({ message: `Couldn't save — ${(err as Error).message}`, undoId: null });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string): Promise<void> => {
-    sightings.removeLocal(id);
+  const handleUndo = async (reportId: string): Promise<void> => {
     setSnackbar(null);
     try {
-      await api.deleteSighting(id, recorder.id);
+      await api.deleteReport(reportId, recorder.id);
+    } finally {
+      reports.refresh();
       butterflies.refreshTop();
-    } catch {
-      sightings.refresh();
+    }
+  };
+
+  const handleEditSave = async (
+    report: Report,
+    patch: Omit<ReportPatch, 'recorderId'>,
+  ): Promise<void> => {
+    setSavingReportId(report.id);
+    try {
+      await api.updateReport(report.id, { ...patch, recorderId: recorder.id });
+      reports.refresh();
+      butterflies.refreshTop();
+    } catch (err) {
+      setSnackbar({ message: `Couldn't save — ${(err as Error).message}`, undoId: null });
+    } finally {
+      setSavingReportId(null);
+    }
+  };
+
+  const handleDelete = async (report: Report): Promise<void> => {
+    try {
+      await api.deleteReport(report.id, recorder.id);
+      setSnackbar({ message: 'Report deleted', undoId: null });
+    } catch (err) {
+      setSnackbar({ message: `Couldn't delete — ${(err as Error).message}`, undoId: null });
+    } finally {
+      reports.refresh();
+      butterflies.refreshTop();
     }
   };
 
@@ -132,42 +169,62 @@ export default function App(): React.ReactElement {
         </div>
       </header>
 
-      <LocationBar geo={geo} />
+      <TabBar active={tab} onChange={setTab} reportCount={reports.reports.length} />
 
-      <main className={styles.main}>
-        {butterflies.error && (
-          <p className={styles.error} role="alert">
-            Couldn't load the butterfly list: {butterflies.error}
-          </p>
-        )}
+      {tab === 'log' ? (
+        <main className={styles.main}>
+          <LocationBar geo={geo} />
 
-        <section className={styles.section} aria-labelledby="grid-heading">
-          <h2 id="grid-heading" className={styles.sectionTitle}>
-            {gridHeading}
-          </h2>
-          {butterflies.loading ? (
-            <p className={styles.hint}>Loading butterflies…</p>
-          ) : (
-            <ButterflyGrid species={gridSpecies} onLog={handleLog} />
+          <ReportDetails
+            meta={meta}
+            onChange={setMeta}
+            liveGridRef={geo.gridRef?.text ?? null}
+            onUseCurrentLocation={() => setMeta((m) => ({ ...m, gridRef: '' }))}
+          />
+
+          {butterflies.error && (
+            <p className={styles.error} role="alert">
+              Couldn't load the butterfly list: {butterflies.error}
+            </p>
           )}
-        </section>
 
-        <section className={styles.section} aria-labelledby="search-heading">
-          <h2 id="search-heading" className={styles.sectionTitle}>
-            Log another species
-          </h2>
-          <SpeciesSearch species={butterflies.species} onLog={handleLog} />
-        </section>
+          <section className={styles.section} aria-labelledby="grid-heading">
+            <SpeciesSearch species={butterflies.species} onLog={draft.add} />
+            <h2 id="grid-heading" className={styles.sectionTitle}>
+              {gridHeading}
+            </h2>
+            {butterflies.loading ? (
+              <p className={styles.hint}>Loading butterflies…</p>
+            ) : (
+              <ButterflyGrid species={gridSpecies} onLog={draft.add} />
+            )}
+          </section>
 
-        <section className={styles.section} aria-labelledby="recent-heading">
-          <h2 id="recent-heading" className={styles.sectionTitle}>
-            Recent sightings
-          </h2>
-          <RecentSightings sightings={sightings.recents} onDelete={handleDelete} />
-        </section>
-      </main>
+          <DraftPanel draft={draft} saving={saving} onSave={() => void handleSaveDraft()} />
+        </main>
+      ) : (
+        <main className={styles.main}>
+          <section className={styles.section} aria-labelledby="reports-heading">
+            <h2 id="reports-heading" className={styles.sectionTitle}>
+              Your reports
+            </h2>
+            <ReportsList
+              reports={reports.reports}
+              species={butterflies.species}
+              loading={reports.loading}
+              savingId={savingReportId}
+              onSave={handleEditSave}
+              onDelete={(report) => void handleDelete(report)}
+            />
+          </section>
+        </main>
+      )}
 
-      <Snackbar snackbar={snackbar} onUndo={handleDelete} onDismiss={() => setSnackbar(null)} />
+      <Snackbar
+        snackbar={snackbar}
+        onUndo={(id) => void handleUndo(id)}
+        onDismiss={() => setSnackbar(null)}
+      />
     </div>
   );
 }

@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../db.js';
-import { sightings } from '../../db/schema.js';
+import { reports } from '../../db/schema.js';
 import { getUserId } from '../session.js';
 
 export async function accountRoutes(app: FastifyInstance): Promise<void> {
-  // When a recorder signs in, claim this device's anonymous sightings for their
+  // When a recorder signs in, claim this device's anonymous reports for their
   // account so nothing captured before signing in is lost.
   app.post(
     '/api/link',
@@ -28,10 +28,10 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
 
       const { recorderId } = req.body as { recorderId: string };
       const linked = await db
-        .update(sightings)
+        .update(reports)
         .set({ userId })
-        .where(and(eq(sightings.recorderId, recorderId), isNull(sightings.userId)))
-        .returning({ id: sightings.id });
+        .where(and(eq(reports.recorderId, recorderId), isNull(reports.userId)))
+        .returning({ id: reports.id });
 
       return { linked: linked.length };
     },

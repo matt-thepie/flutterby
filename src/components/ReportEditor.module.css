@@ -1,0 +1,103 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-3);
+}
+
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.emptyLines {
+  color: var(--c-muted);
+  font-size: 0.9rem;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+
+.name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  background: var(--c-surface-2);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+}
+
+.step {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+}
+
+.count {
+  min-width: 2.2ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.save,
+.cancel,
+.delete,
+.deleteConfirm {
+  min-height: 42px;
+  padding: 0 var(--space-4);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+}
+
+.save {
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
+}
+
+.save:hover {
+  background: var(--c-primary-strong);
+}
+
+.save:disabled {
+  opacity: 0.6;
+}
+
+.cancel {
+  color: var(--c-text);
+  background: var(--c-surface-2);
+}
+
+.delete {
+  margin-left: auto;
+  color: var(--c-danger);
+  background: color-mix(in srgb, var(--c-danger) 10%, transparent);
+}
+
+.deleteConfirm {
+  margin-left: auto;
+  color: #fff;
+  background: var(--c-danger);
+}
