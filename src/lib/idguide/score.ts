@@ -36,6 +36,30 @@ function overlap<T>(queryTokens: T[], speciesTokens: T[]): { score: number; matc
   return { score: queryTokens.length ? matched.length / queryTokens.length : 0, matched };
 }
 
+/**
+ * Colour match, weighted by dominance. Species list their colours most-dominant
+ * first, so a butterfly that IS orange (orange listed first) beats one merely
+ * carrying a fleck of orange (listed last). Without this, every species with a
+ * colour anywhere in its palette ties at 100%, and the tie falls to list order.
+ */
+const DOMINANCE = [1, 0.85, 0.65, 0.5];
+
+function colourMatch(
+  queryColours: string[],
+  speciesColours: string[],
+): { score: number; matched: string[] } {
+  const matched: string[] = [];
+  let sum = 0;
+  for (const qc of queryColours) {
+    const idx = speciesColours.indexOf(qc);
+    if (idx >= 0) {
+      matched.push(qc);
+      sum += DOMINANCE[Math.min(idx, DOMINANCE.length - 1)]!;
+    }
+  }
+  return { score: queryColours.length ? sum / queryColours.length : 0, matched };
+}
+
 export interface FeatureEvidence {
   feature: 'months' | 'colours' | 'size' | 'habitats' | 'markings';
   matched: boolean;
@@ -73,7 +97,7 @@ function scoreSpecies(query: IdQuery, species: SpeciesFeatures): ScoredMatch {
   }
 
   if (query.colours.length) {
-    const { score, matched } = overlap(query.colours, species.colours);
+    const { score, matched } = colourMatch(query.colours, species.colours);
     weighted += WEIGHTS.colours * score;
     totalWeight += WEIGHTS.colours;
     evidence.push({ feature: 'colours', matched: matched.length > 0, asked: query.colours, detail: matched });
@@ -108,7 +132,7 @@ function scoreSpecies(query: IdQuery, species: SpeciesFeatures): ScoredMatch {
  * Score every species against the query and return the best matches.
  * Pure and deterministic — no model, no network.
  */
-export function scoreSpeciesList(query: IdQuery, limit = 8): ScoredMatch[] {
+export function scoreSpeciesList(query: IdQuery, limit = 24): ScoredMatch[] {
   return SPECIES_FEATURES.map((s) => scoreSpecies(query, s))
     .filter((m) => m.score > 0)
     .sort((a, b) => b.score - a.score)

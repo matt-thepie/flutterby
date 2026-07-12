@@ -90,11 +90,18 @@
   position: relative;
   width: 84px;
   height: 84px;
+  padding: 0;
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--c-surface-2);
   display: grid;
   place-items: center;
+  cursor: pointer;
+}
+
+.media:hover {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 1px;
 }
 
 .image {
@@ -132,9 +139,21 @@
   gap: 4px;
 }
 
-.name {
+.nameButton {
+  align-self: flex-start;
+  padding: 0;
   font-size: 1rem;
   font-weight: 700;
+  color: var(--c-text);
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--c-border);
+  text-underline-offset: 2px;
+}
+
+.nameButton:hover {
+  color: var(--c-primary);
+  text-decoration-color: var(--c-primary);
 }
 
 .scientific {
@@ -173,15 +192,48 @@
   font-weight: 700;
 }
 
-.logButton {
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   align-self: stretch;
-  padding: 0 var(--space-3);
+  justify-content: center;
+}
+
+.logButton {
+  padding: var(--space-2) var(--space-3);
   font-weight: 700;
   font-size: 0.85rem;
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.logButton:hover {
+  background: var(--c-primary-strong);
+}
+
+.dismiss {
+  padding: var(--space-1) var(--space-3);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--c-muted);
+  background: var(--c-surface-2);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.dismiss:hover {
+  color: var(--c-danger);
+}
+
+.more {
+  padding: var(--space-3);
+  font-weight: 700;
   color: var(--c-primary);
   background: var(--c-primary-tint);
   border-radius: var(--radius-sm);
-  white-space: nowrap;
 }
 
 .disclaimer {
@@ -190,10 +242,10 @@
   font-style: italic;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 440px) {
   .result {
     grid-template-columns: 64px 1fr;
-    grid-template-areas: 'media body' 'log log';
+    grid-template-areas: 'media body' 'actions actions';
   }
   .media {
     width: 64px;
@@ -203,8 +255,14 @@
   .body {
     grid-area: body;
   }
-  .logButton {
-    grid-area: log;
+  .actions {
+    grid-area: actions;
+    flex-direction: row;
+  }
+  .actions .logButton,
+  .actions .dismiss {
+    flex: 1;
     min-height: 40px;
+    text-align: center;
   }
 }

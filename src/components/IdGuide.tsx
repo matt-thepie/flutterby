@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Butterfly } from '../types/models';
 import { parseDescription, isEmptyQuery } from '../lib/idguide/parse';
 import { scoreSpeciesList, type FeatureEvidence } from '../lib/idguide/score';
+import { SpeciesDetail } from './SpeciesDetail';
 import styles from './IdGuide.module.css';
 
 interface Props {
@@ -17,6 +18,8 @@ const EXAMPLES = [
   'black and white marbled, grassland, midsummer',
 ];
 
+const INITIAL_VISIBLE = 6;
+
 const FEATURE_LABELS: Record<FeatureEvidence['feature'], string> = {
   months: 'time',
   colours: 'colour',
@@ -29,12 +32,7 @@ function EvidenceChips({ evidence }: { evidence: FeatureEvidence[] }): React.Rea
   return (
     <ul className={styles.evidence}>
       {evidence.map((e) => (
-        <li
-          key={e.feature}
-          className={styles.chip}
-          data-matched={e.matched}
-          title={FEATURE_LABELS[e.feature]}
-        >
+        <li key={e.feature} className={styles.chip} data-matched={e.matched} title={FEATURE_LABELS[e.feature]}>
           <span className={styles.tick} aria-hidden="true">
             {e.matched ? '✓' : '✗'}
           </span>
@@ -47,6 +45,9 @@ function EvidenceChips({ evidence }: { evidence: FeatureEvidence[] }): React.Rea
 
 export function IdGuide({ species, onLogSpecies }: Props): React.ReactElement {
   const [text, setText] = useState('');
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [visible, setVisible] = useState(INITIAL_VISIBLE);
+  const [detail, setDetail] = useState<Butterfly | null>(null);
 
   const bySciName = useMemo(() => {
     const map = new Map<string, Butterfly>();
@@ -54,15 +55,28 @@ export function IdGuide({ species, onLogSpecies }: Props): React.ReactElement {
     return map;
   }, [species]);
 
-  const { query, understood, results } = useMemo(() => {
+  const { query, understood, allResults } = useMemo(() => {
     const parsed = parseDescription(text);
     if (isEmptyQuery(parsed.query)) {
-      return { query: parsed.query, understood: parsed.understood, results: [] };
+      return { query: parsed.query, understood: parsed.understood, allResults: [] };
     }
-    return { query: parsed.query, understood: parsed.understood, results: scoreSpeciesList(parsed.query) };
+    return { query: parsed.query, understood: parsed.understood, allResults: scoreSpeciesList(parsed.query) };
+  }, [text]);
+
+  // A fresh description starts the suggestion list over.
+  useEffect(() => {
+    setDismissed(new Set());
+    setVisible(INITIAL_VISIBLE);
   }, [text]);
 
   const hasQuery = !isEmptyQuery(query);
+  const kept = allResults.filter((m) => !dismissed.has(m.scientificName));
+  const shown = kept.slice(0, visible);
+  const remaining = kept.length - shown.length;
+
+  const dismiss = (scientificName: string): void => {
+    setDismissed((prev) => new Set(prev).add(scientificName));
+  };
 
   return (
     <div className={styles.guide}>
@@ -101,68 +115,99 @@ export function IdGuide({ species, onLogSpecies }: Props): React.ReactElement {
       {hasQuery && (
         <>
           <p className={styles.understood}>
-            Matching on: {understood.map((u, i) => (
+            Matching on:{' '}
+            {understood.map((u, i) => (
               <span key={i} className={styles.understoodTag}>
                 {u}
               </span>
             ))}
           </p>
 
-          {results.length === 0 ? (
-            <p className={styles.noParse}>No close matches — try fewer or different details.</p>
+          {shown.length === 0 ? (
+            <p className={styles.noParse}>No more matches — try different details.</p>
           ) : (
             <ol className={styles.results}>
-              {results.map((match) => {
+              {shown.map((match) => {
                 const butterfly = bySciName.get(match.scientificName);
                 return (
                   <li key={match.scientificName} className={styles.result}>
-                    <div className={styles.media}>
+                    <button
+                      type="button"
+                      className={styles.media}
+                      onClick={() => butterfly && setDetail(butterfly)}
+                      aria-label={`More about ${butterfly?.commonName ?? match.scientificName}`}
+                    >
                       {butterfly?.imageUrl ? (
                         <img
                           className={styles.image}
                           src={butterfly.imageUrl}
                           alt={butterfly.commonName}
                           loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
                         />
                       ) : (
                         <span className={styles.placeholder} aria-hidden="true">
                           🦋
                         </span>
                       )}
-                      <span
-                        className={styles.score}
-                        data-strong={match.score >= 70}
-                        aria-label={`${match.score} percent match`}
-                      >
+                      <span className={styles.score} data-strong={match.score >= 70}>
                         {match.score}%
                       </span>
-                    </div>
+                    </button>
+
                     <div className={styles.body}>
-                      <h3 className={styles.name}>{butterfly?.commonName ?? match.scientificName}</h3>
+                      <button
+                        type="button"
+                        className={styles.nameButton}
+                        onClick={() => butterfly && setDetail(butterfly)}
+                      >
+                        {butterfly?.commonName ?? match.scientificName}
+                      </button>
                       <p className={styles.scientific}>{match.scientificName}</p>
                       <EvidenceChips evidence={match.evidence} />
                     </div>
-                    {butterfly && (
+
+                    <div className={styles.actions}>
+                      {butterfly && (
+                        <button
+                          type="button"
+                          className={styles.logButton}
+                          onClick={() => onLogSpecies(butterfly)}
+                        >
+                          Log this
+                        </button>
+                      )}
                       <button
                         type="button"
-                        className={styles.logButton}
-                        onClick={() => onLogSpecies(butterfly)}
+                        className={styles.dismiss}
+                        onClick={() => dismiss(match.scientificName)}
                       >
-                        Log this
+                        Not this
                       </button>
-                    )}
+                    </div>
                   </li>
                 );
               })}
             </ol>
           )}
+
+          {remaining > 0 && (
+            <button
+              type="button"
+              className={styles.more}
+              onClick={() => setVisible((v) => v + INITIAL_VISIBLE)}
+            >
+              Show more options ({remaining} left)
+            </button>
+          )}
+
           <p className={styles.disclaimer}>
             Suggestions only — always confirm from wing patterns and a field guide before recording.
           </p>
         </>
+      )}
+
+      {detail && (
+        <SpeciesDetail species={detail} onClose={() => setDetail(null)} onLog={onLogSpecies} />
       )}
     </div>
   );

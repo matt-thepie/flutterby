@@ -80,3 +80,5 @@ export const SPECIES_FEATURES: SpeciesFeatures[] = [
   { scientificName: 'Hipparchia semele', flightMonths: [7, 8, 9], colours: ['grey', 'brown', 'orange', 'black'], sizeClass: 'medium', wingspanMm: [51, 62], habitats: ['heathland', 'coastal', 'cliff', 'grassland'], markings: ['eyespots', 'marbled'] },
   { scientificName: 'Coenonympha tullia', flightMonths: [6, 7, 8], colours: ['orange', 'brown', 'grey'], sizeClass: 'small', wingspanMm: [35, 40], habitats: ['bog', 'moorland'], markings: ['eyespots', 'spots'] },
 ];
+
+export const FEATURES_BY_SCI = new Map(SPECIES_FEATURES.map((s) => [s.scientificName, s]));
