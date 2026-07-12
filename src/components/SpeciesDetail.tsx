@@ -136,14 +136,7 @@ export function SpeciesDetail({ species, onClose, onLog }: Props): React.ReactEl
 
       <div className={styles.actions}>
         {onLog && (
-          <button
-            type="button"
-            className={styles.logButton}
-            onClick={() => {
-              onLog(species);
-              onClose();
-            }}
-          >
+          <button type="button" className={styles.logButton} onClick={() => onLog(species)}>
             Log this
           </button>
         )}

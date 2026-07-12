@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Butterfly } from '../types/models';
 import { parseDescription, isEmptyQuery } from '../lib/idguide/parse';
 import { scoreSpeciesList, type FeatureEvidence } from '../lib/idguide/score';
-import { SpeciesDetail } from './SpeciesDetail';
 import styles from './IdGuide.module.css';
 
 interface Props {
   species: Butterfly[];
   /** Jump to the Log tab with this species queued into the draft. */
   onLogSpecies: (species: Butterfly) => void;
+  /** Open the detail panel for a species (drives a /identify/<slug> URL). */
+  onShowSpecies: (species: Butterfly) => void;
 }
 
 const EXAMPLES = [
@@ -43,11 +44,10 @@ function EvidenceChips({ evidence }: { evidence: FeatureEvidence[] }): React.Rea
   );
 }
 
-export function IdGuide({ species, onLogSpecies }: Props): React.ReactElement {
+export function IdGuide({ species, onLogSpecies, onShowSpecies }: Props): React.ReactElement {
   const [text, setText] = useState('');
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
-  const [detail, setDetail] = useState<Butterfly | null>(null);
 
   const bySciName = useMemo(() => {
     const map = new Map<string, Butterfly>();
@@ -134,7 +134,7 @@ export function IdGuide({ species, onLogSpecies }: Props): React.ReactElement {
                     <button
                       type="button"
                       className={styles.media}
-                      onClick={() => butterfly && setDetail(butterfly)}
+                      onClick={() => butterfly && onShowSpecies(butterfly)}
                       aria-label={`More about ${butterfly?.commonName ?? match.scientificName}`}
                     >
                       {butterfly?.imageUrl ? (
@@ -158,7 +158,7 @@ export function IdGuide({ species, onLogSpecies }: Props): React.ReactElement {
                       <button
                         type="button"
                         className={styles.nameButton}
-                        onClick={() => butterfly && setDetail(butterfly)}
+                        onClick={() => butterfly && onShowSpecies(butterfly)}
                       >
                         {butterfly?.commonName ?? match.scientificName}
                       </button>
@@ -204,10 +204,6 @@ export function IdGuide({ species, onLogSpecies }: Props): React.ReactElement {
             Suggestions only — always confirm from wing patterns and a field guide before recording.
           </p>
         </>
-      )}
-
-      {detail && (
-        <SpeciesDetail species={detail} onClose={() => setDetail(null)} onLog={onLogSpecies} />
       )}
     </div>
   );

@@ -9,8 +9,10 @@ import { useReports } from './hooks/useReports';
 import { useDraftReport } from './hooks/useDraftReport';
 import { useUploadQueue } from './hooks/useUploadQueue';
 import { usePlaceSuggestion } from './hooks/usePlaceSuggestion';
+import { useRouter, routeToPath, slugify } from './lib/router';
 import { AccountControl } from './components/AccountControl';
-import { TabBar, type Tab } from './components/TabBar';
+import { TabBar } from './components/TabBar';
+import { SpeciesDetail } from './components/SpeciesDetail';
 import { VisitDetails } from './components/VisitDetails';
 import { LocationModal } from './components/LocationModal';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -33,10 +35,17 @@ export default function App(): React.ReactElement {
   const reports = useReports(recorder.id);
   const draft = useDraftReport();
 
-  const [tab, setTab] = useState<Tab>('log');
+  const { route, navigate } = useRouter();
+  const tab = route.tab;
+  const setTab = useCallback((next: typeof tab) => navigate(routeToPath(next)), [navigate]);
   const [saving, setSaving] = useState(false);
   const [savingReportId, setSavingReportId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+
+  // Normalise the bare root to /log so the URL always reflects the tab.
+  useEffect(() => {
+    if (window.location.pathname === '/') navigate('/log', { replace: true });
+  }, [navigate]);
 
   // Our explanatory prompt goes in front of the browser's location dialog.
   // "No thanks" is remembered; a "Turn on" button in visit details undoes it.
@@ -118,6 +127,15 @@ export default function App(): React.ReactElement {
     const shown = new Set(regulars.map((s) => s.id));
     return butterflies.species.filter((s) => s.sortOrder < 500 && !shown.has(s.id));
   }, [regulars, butterflies.species]);
+
+  // The species detail panel is URL-driven: /identify/<slug> resolves to a
+  // butterfly here and renders over the app (deep-linkable, shareable).
+  const speciesBySlug = useMemo(() => {
+    const map = new Map<string, Butterfly>();
+    for (const s of butterflies.species) map.set(slugify(s.commonName), s);
+    return map;
+  }, [butterflies.species]);
+  const detailSpecies = route.speciesSlug ? (speciesBySlug.get(route.speciesSlug) ?? null) : null;
 
   const [askName, setAskName] = useState(false);
   const [askPlace, setAskPlace] = useState(false);
@@ -219,8 +237,13 @@ export default function App(): React.ReactElement {
   // to Log so they can finish the report.
   const handleLogFromGuide = (species: Butterfly): void => {
     draft.add(species, 1);
-    setTab('log');
+    navigate('/log');
   };
+
+  // Open / close the URL-driven species detail panel.
+  const showSpecies = (species: Butterfly): void =>
+    navigate(`/identify/${slugify(species.commonName)}`);
+  const closeSpecies = (): void => navigate('/identify', { replace: true });
 
   const handleDelete = async (report: Report): Promise<void> => {
     try {
@@ -330,7 +353,11 @@ export default function App(): React.ReactElement {
             <h2 id="identify-heading" className={styles.sectionTitle}>
               Identify a butterfly
             </h2>
-            <IdGuide species={butterflies.species} onLogSpecies={handleLogFromGuide} />
+            <IdGuide
+              species={butterflies.species}
+              onLogSpecies={handleLogFromGuide}
+              onShowSpecies={showSpecies}
+            />
           </section>
         </main>
       )}
@@ -359,6 +386,9 @@ export default function App(): React.ReactElement {
           }}
           onCancel={() => setAskPlace(false)}
         />
+      )}
+      {detailSpecies && (
+        <SpeciesDetail species={detailSpecies} onClose={closeSpecies} onLog={handleLogFromGuide} />
       )}
       <InstallPrompt />
 

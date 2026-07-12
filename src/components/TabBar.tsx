@@ -1,6 +1,5 @@
+import type { Tab } from '../lib/router';
 import styles from './TabBar.module.css';
-
-export type Tab = 'log' | 'reports' | 'identify';
 
 interface Props {
   active: Tab;
