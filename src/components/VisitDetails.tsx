@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GeoState } from '../hooks/useGeolocation';
+import type { PlaceSuggestion } from '../hooks/usePlaceSuggestion';
 import { ReportDetails, type ReportMeta } from './ReportDetails';
 import styles from './VisitDetails.module.css';
 
@@ -9,6 +10,8 @@ interface Props {
   geo: GeoState;
   /** Turn location on (clears any earlier "no thanks" and starts the watch). */
   onEnableLocation: () => void;
+  /** Best guess at the place name for where they're standing. */
+  placeSuggestion: PlaceSuggestion | null;
 }
 
 function locationStatus(geo: GeoState): { text: string; tone: 'ok' | 'busy' | 'warn' } {
@@ -36,7 +39,13 @@ function locationStatus(geo: GeoState): { text: string; tone: 'ok' | 'busy' | 'w
  * is being acquired); once a GPS fix lands it collapses to a one-line summary
  * so the butterflies take the stage. Tap to reopen at any time.
  */
-export function VisitDetails({ meta, onChange, geo, onEnableLocation }: Props): React.ReactElement {
+export function VisitDetails({
+  meta,
+  onChange,
+  geo,
+  onEnableLocation,
+  placeSuggestion,
+}: Props): React.ReactElement {
   const [open, setOpen] = useState(true);
   const userToggled = useRef(false);
   const status = locationStatus(geo);
@@ -94,6 +103,19 @@ export function VisitDetails({ meta, onChange, geo, onEnableLocation }: Props): 
                   Retry
                 </button>
               )}
+            </p>
+          )}
+          {placeSuggestion && !meta.locationName && (
+            <p className={styles.placeHint}>
+              {placeSuggestion.source === 'remembered' ? 'One of your spots: ' : 'Looks like: '}
+              <strong>{placeSuggestion.name}</strong>
+              <button
+                type="button"
+                className={styles.usePlace}
+                onClick={() => onChange({ ...meta, locationName: placeSuggestion.name })}
+              >
+                Use
+              </button>
             </p>
           )}
           <ReportDetails

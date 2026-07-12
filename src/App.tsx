@@ -8,12 +8,14 @@ import { useButterflies } from './hooks/useButterflies';
 import { useReports } from './hooks/useReports';
 import { useDraftReport } from './hooks/useDraftReport';
 import { useUploadQueue } from './hooks/useUploadQueue';
+import { usePlaceSuggestion } from './hooks/usePlaceSuggestion';
 import { AccountControl } from './components/AccountControl';
 import { TabBar, type Tab } from './components/TabBar';
 import { VisitDetails } from './components/VisitDetails';
 import { LocationModal } from './components/LocationModal';
 import { InstallPrompt } from './components/InstallPrompt';
 import { NameModal } from './components/NameModal';
+import { PlaceModal } from './components/PlaceModal';
 import { ButterflyGrid } from './components/ButterflyGrid';
 import { SpeciesSearch } from './components/SpeciesSearch';
 import { DraftPanel } from './components/DraftPanel';
@@ -117,8 +119,10 @@ export default function App(): React.ReactElement {
   }, [regulars, butterflies.species]);
 
   const [askName, setAskName] = useState(false);
+  const [askPlace, setAskPlace] = useState(false);
+  const placeSuggestion = usePlaceSuggestion(geo, recorder.id);
 
-  const buildInput = (recorderName: string): NewReportInput => ({
+  const buildInput = (recorderName: string, locationName: string | null): NewReportInput => ({
     recorderId: recorder.id,
     recorderName,
     // An untouched grid-ref field means "follow the live GPS reading".
@@ -126,25 +130,41 @@ export default function App(): React.ReactElement {
     latitude: geo.latitude,
     longitude: geo.longitude,
     accuracyM: geo.accuracyM,
-    locationName: draft.meta.locationName.trim() || null,
+    locationName,
     observedAt: combineToIso(draft.meta.date, draft.meta.time),
     sightings: draft.lines.map((l) => ({ speciesId: l.species.id, count: l.count })),
   });
 
   // "Mark as done": the draft stops being an in-progress report. It's uploaded
   // immediately when we can, otherwise queued until the signal returns.
-  // A report without a recorder's name is no use to the county recorder, so a
-  // missing name detours through the who-are-you modal first.
-  const handleMarkDone = async (nameOverride?: string): Promise<void> => {
+  // Two gates on the way: a recorder name (required), and a confirmed place
+  // name (best-guessed, skippable) — the confirmed name is remembered so the
+  // same spot keeps one canonical name.
+  interface DoneOverrides {
+    name?: string;
+    place?: string;
+    skipPlace?: boolean;
+  }
+
+  const handleMarkDone = async (overrides: DoneOverrides = {}): Promise<void> => {
     if (draft.lines.length === 0) return;
-    const recorderName = (nameOverride ?? draft.meta.recorderName).trim();
+    const recorderName = (overrides.name ?? draft.meta.recorderName).trim();
     if (!recorderName) {
       setAskName(true);
       return;
     }
-    if (nameOverride) draft.setMeta({ ...draft.meta, recorderName });
+    // Persist each answer as it arrives — the flow may pause again at the
+    // next gate, and the follow-up call re-reads from draft.meta.
+    if (overrides.name) draft.setMeta({ ...draft.meta, recorderName });
 
-    const input = buildInput(recorderName);
+    const locationName = (overrides.place ?? draft.meta.locationName).trim() || null;
+    if (!locationName && !overrides.skipPlace) {
+      setAskPlace(true);
+      return;
+    }
+    if (overrides.place) draft.setMeta({ ...draft.meta, locationName: overrides.place });
+
+    const input = buildInput(recorderName, locationName);
     const summary = `${draft.lines.length} species, ${draft.totalIndividuals} butterflies`;
     recorder.setName(recorderName);
     setSaving(true);
@@ -235,6 +255,7 @@ export default function App(): React.ReactElement {
             onChange={draft.setMeta}
             geo={geo}
             onEnableLocation={enableLocation}
+            placeSuggestion={placeSuggestion}
           />
 
           {butterflies.error && (
@@ -298,9 +319,24 @@ export default function App(): React.ReactElement {
         <NameModal
           onSubmit={(name) => {
             setAskName(false);
-            void handleMarkDone(name);
+            void handleMarkDone({ name });
           }}
           onCancel={() => setAskName(false)}
+        />
+      )}
+      {askPlace && (
+        <PlaceModal
+          suggestion={placeSuggestion}
+          gridRef={draft.meta.gridRef.trim() || geo.gridRef?.text || null}
+          onConfirm={(place) => {
+            setAskPlace(false);
+            void handleMarkDone({ place });
+          }}
+          onSkip={() => {
+            setAskPlace(false);
+            void handleMarkDone({ skipPlace: true });
+          }}
+          onCancel={() => setAskPlace(false)}
         />
       )}
       <InstallPrompt />

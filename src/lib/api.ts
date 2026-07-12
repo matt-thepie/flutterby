@@ -45,6 +45,15 @@ export const api = {
 
   getConfig: (): Promise<{ providers: string[] }> => request('/api/config'),
 
+  suggestPlace: (
+    recorderId: string,
+    lat: number,
+    lon: number,
+  ): Promise<{
+    suggestion: { name: string; source: 'remembered' | 'osm'; distanceM?: number } | null;
+    nearby: Array<{ name: string; distanceM: number }>;
+  }> => request(`/api/places/suggest?${qs({ recorderId, lat, lon })}`),
+
   // Claim this device's anonymous reports for the signed-in account.
   linkDevice: (recorderId: string): Promise<{ linked: number }> =>
     request('/api/link', { method: 'POST', body: JSON.stringify({ recorderId }) }),

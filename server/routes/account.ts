@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../db.js';
-import { reports } from '../../db/schema.js';
+import { places, reports } from '../../db/schema.js';
 import { getUserId } from '../session.js';
 
 export async function accountRoutes(app: FastifyInstance): Promise<void> {
@@ -32,6 +32,12 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
         .set({ userId })
         .where(and(eq(reports.recorderId, recorderId), isNull(reports.userId)))
         .returning({ id: reports.id });
+
+      // Remembered places travel with the account too.
+      await db
+        .update(places)
+        .set({ userId })
+        .where(and(eq(places.recorderId, recorderId), isNull(places.userId)));
 
       return { linked: linked.length };
     },

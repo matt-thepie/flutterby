@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, or, type SQL } from 'drizzle-orm';
 import { db } from '../db.js';
 import { butterflies, reports, sightings } from '../../db/schema.js';
 import { getUserId } from '../session.js';
+import { rememberPlace } from './places.js';
 
 interface SightingLine {
   speciesId: number;
@@ -130,6 +131,19 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
       })),
     );
 
+    // A confirmed place name becomes (or refreshes) a remembered place, so
+    // the same spot gets the same canonical name next visit.
+    if (report.locationName && report.latitude != null && report.longitude != null) {
+      await rememberPlace({
+        recorderId: report.recorderId,
+        userId,
+        name: report.locationName,
+        gridRef: report.gridRef,
+        latitude: report.latitude,
+        longitude: report.longitude,
+      }).catch((err) => req.log.warn(err, 'rememberPlace failed'));
+    }
+
     reply.code(201);
     return report;
   });
@@ -210,6 +224,17 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
             })),
           );
         }
+      }
+
+      if (body.locationName && updated.latitude != null && updated.longitude != null) {
+        await rememberPlace({
+          recorderId: updated.recorderId,
+          userId,
+          name: body.locationName,
+          gridRef: updated.gridRef,
+          latitude: updated.latitude,
+          longitude: updated.longitude,
+        }).catch((err) => req.log.warn(err, 'rememberPlace failed'));
       }
 
       return updated;

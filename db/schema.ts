@@ -68,6 +68,29 @@ export const reports = pgTable(
   ],
 );
 
+/**
+ * A recorder's remembered recording spots ("Lamorna Cove", "Home garden").
+ * Created the first time a report is saved with a confirmed place name; the
+ * suggest endpoint then offers the nearest remembered place before falling
+ * back to reverse geocoding, so regular sites keep one canonical name.
+ */
+export const places = pgTable(
+  'places',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    recorderId: uuid('recorder_id').notNull(),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    name: text('name').notNull(),
+    gridRef: text('grid_ref'),
+    latitude: doublePrecision('latitude').notNull(),
+    longitude: doublePrecision('longitude').notNull(),
+    useCount: integer('use_count').notNull().default(1),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('places_recorder_idx').on(t.recorderId), index('places_user_idx').on(t.userId)],
+);
+
 /** One species line within a report: which butterfly, and how many. */
 export const sightings = pgTable(
   'sightings',
