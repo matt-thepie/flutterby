@@ -18,6 +18,14 @@ whole visit in one go (with one-tap undo).
 **Reports** — the recorder's own historic reports, each openable to edit the
 details, adjust counts, add/remove species, or delete the visit.
 
+**Identify** — describe what you saw in plain words ("small orange butterfly
+with dark spots on chalk downland in July") and get ranked suggestions with the
+matched evidence shown. All reasoning is precomputed at build time (see
+`src/lib/idguide/`): an LLM produced a per-species feature database and a
+synonym lexicon against fixed controlled vocabularies; at runtime the app just
+gazetteer-parses the text and scores every species with a weighted linear sum —
+no model, no network, works offline.
+
 - **Automatic OS grid reference** from the device's location (WGS84 → OSGB36 →
   National Grid), with precision that adapts to GPS accuracy.
 - **Every British butterfly** (64 species) searchable by common or scientific

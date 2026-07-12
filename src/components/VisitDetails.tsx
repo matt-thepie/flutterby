@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { GeoState } from '../hooks/useGeolocation';
 import type { PlaceSuggestion } from '../hooks/usePlaceSuggestion';
 import { ReportDetails, type ReportMeta } from './ReportDetails';
@@ -46,19 +46,10 @@ export function VisitDetails({
   onEnableLocation,
   placeSuggestion,
 }: Props): React.ReactElement {
-  const [open, setOpen] = useState(true);
-  const userToggled = useRef(false);
+  // Collapsed by default: while location is being acquired the summary just
+  // reads "Getting your location…" — no need to fill the screen with the form.
+  const [open, setOpen] = useState(false);
   const status = locationStatus(geo);
-
-  // Auto-collapse exactly once, when the first fix arrives — unless the
-  // recorder has already toggled the panel themselves.
-  const collapsedOnce = useRef(false);
-  useEffect(() => {
-    if (geo.status === 'ready' && !collapsedOnce.current && !userToggled.current) {
-      collapsedOnce.current = true;
-      setOpen(false);
-    }
-  }, [geo.status]);
 
   const gridRefShown = meta.gridRef.trim() || geo.gridRef?.text || null;
 
@@ -68,10 +59,7 @@ export function VisitDetails({
         type="button"
         className={styles.summary}
         aria-expanded={open}
-        onClick={() => {
-          userToggled.current = true;
-          setOpen((o) => !o);
-        }}
+        onClick={() => setOpen((o) => !o)}
       >
         <span className={styles.summaryMain}>
           <span className={styles.gridref} data-tone={status.tone}>

@@ -21,8 +21,9 @@ import { SpeciesSearch } from './components/SpeciesSearch';
 import { DraftPanel } from './components/DraftPanel';
 import { ReportsList } from './components/ReportsList';
 import { PendingReports } from './components/PendingReports';
+import { IdGuide } from './components/IdGuide';
 import { Snackbar, type SnackbarState } from './components/Snackbar';
-import type { GridSpecies, NewReportInput, Report, ReportPatch } from './types/models';
+import type { Butterfly, GridSpecies, NewReportInput, Report, ReportPatch } from './types/models';
 import styles from './App.module.css';
 
 export default function App(): React.ReactElement {
@@ -214,6 +215,13 @@ export default function App(): React.ReactElement {
     }
   };
 
+  // From the Identify tab: add the suggested species to the draft and switch
+  // to Log so they can finish the report.
+  const handleLogFromGuide = (species: Butterfly): void => {
+    draft.add(species, 1);
+    setTab('log');
+  };
+
   const handleDelete = async (report: Report): Promise<void> => {
     try {
       await api.deleteReport(report.id, recorder.id);
@@ -248,7 +256,7 @@ export default function App(): React.ReactElement {
         reportCount={reports.reports.length + queue.pending.length}
       />
 
-      {tab === 'log' ? (
+      {tab === 'log' && (
         <main className={styles.main}>
           <VisitDetails
             meta={draft.meta}
@@ -288,7 +296,9 @@ export default function App(): React.ReactElement {
 
           <DraftPanel draft={draft} saving={saving} onSave={() => void handleMarkDone()} />
         </main>
-      ) : (
+      )}
+
+      {tab === 'reports' && (
         <main className={styles.main}>
           <PendingReports
             draft={draft}
@@ -310,6 +320,17 @@ export default function App(): React.ReactElement {
               onSave={handleEditSave}
               onDelete={(report) => void handleDelete(report)}
             />
+          </section>
+        </main>
+      )}
+
+      {tab === 'identify' && (
+        <main className={styles.main}>
+          <section className={styles.section} aria-labelledby="identify-heading">
+            <h2 id="identify-heading" className={styles.sectionTitle}>
+              Identify a butterfly
+            </h2>
+            <IdGuide species={butterflies.species} onLogSpecies={handleLogFromGuide} />
           </section>
         </main>
       )}

@@ -1,6 +1,6 @@
 import styles from './TabBar.module.css';
 
-export type Tab = 'log' | 'reports';
+export type Tab = 'log' | 'reports' | 'identify';
 
 interface Props {
   active: Tab;
@@ -27,6 +27,14 @@ export function TabBar({ active, onChange, reportCount }: Props): React.ReactEle
       >
         Reports
         {reportCount > 0 && <span className={styles.count}>{reportCount}</span>}
+      </button>
+      <button
+        type="button"
+        className={styles.tab}
+        aria-current={active === 'identify' ? 'page' : undefined}
+        onClick={() => onChange('identify')}
+      >
+        Identify
       </button>
     </nav>
   );
