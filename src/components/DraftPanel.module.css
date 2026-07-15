@@ -64,6 +64,13 @@
   background: var(--c-surface-2);
 }
 
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: var(--space-1);
+}
+
 .note {
   width: 100%;
   padding: var(--space-2) var(--space-3);

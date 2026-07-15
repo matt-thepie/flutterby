@@ -52,6 +52,7 @@ export async function fetchRecords(scope?: SQL): Promise<ExportRow[]> {
       recorderName: reports.recorderName,
       observedAt: reports.observedAt,
       notes: sightings.notes,
+      sex: sightings.sex,
       count: sightings.count,
     })
     .from(sightings)
@@ -72,7 +73,7 @@ export async function fetchRecords(scope?: SQL): Promise<ExportRow[]> {
     date: new Date(r.observedAt),
     number: r.count,
     lifeStage: 'Adult', // this app records adults on the wing
-    sex: '',
+    sex: r.sex === 'male' ? 'Male' : r.sex === 'female' ? 'Female' : '',
     comment: r.notes ?? '',
     recordType: '',
     importReference: '',

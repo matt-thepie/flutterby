@@ -172,8 +172,8 @@ link/page to allowlisted signed-in users.
 
 ## TODO
 
-- Life Stage / Sex are not captured in-app (export defaults Life Stage to
-  "Adult"); add fields if the recorder needs immature stages.
+- Life Stage is not captured in-app (export defaults it to "Adult"); add a
+  field if the recorder needs to note immature stages.
 
 ## A note on location precision
 

@@ -185,6 +185,11 @@ export function AdminView({ onExit }: Props): React.ReactElement {
                         <div className={styles.sightingBody}>
                           <span className={styles.sightingName}>
                             {row.count} × {row.commonName}
+                            {row.sex && (
+                              <span className={styles.sex} title={row.sex}>
+                                {row.sex === 'male' ? '♂' : '♀'}
+                              </span>
+                            )}
                           </span>
                           <span className={styles.sightingMeta}>
                             {dateFmt.format(new Date(row.observedAt))} · {row.recorder}

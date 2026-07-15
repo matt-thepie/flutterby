@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { DraftReport } from '../hooks/useDraftReport';
+import { SexControl } from './SexControl';
 import styles from './DraftPanel.module.css';
 
 interface Props {
@@ -17,8 +18,8 @@ export function DraftPanel({ draft, saving, onSave }: Props): React.ReactElement
   return (
     <section className={styles.panel} aria-label="This report">
       <ul className={styles.lines}>
-        {draft.lines.map(({ species, count, notes }) => {
-          const noteOpen = openNote === species.id || Boolean(notes);
+        {draft.lines.map(({ species, count, notes, sex }) => {
+          const detailsOpen = openNote === species.id || Boolean(notes) || Boolean(sex);
           return (
             <li key={species.id} className={styles.line}>
               <div className={styles.lineMain}>
@@ -49,12 +50,14 @@ export function DraftPanel({ draft, saving, onSave }: Props): React.ReactElement
                 <button
                   type="button"
                   className={styles.noteToggle}
-                  data-active={Boolean(notes)}
-                  onClick={() => setOpenNote(noteOpen && !notes ? null : species.id)}
-                  aria-label={`Comment on ${species.commonName}`}
-                  aria-expanded={noteOpen}
+                  data-active={Boolean(notes) || Boolean(sex)}
+                  onClick={() =>
+                    setOpenNote(detailsOpen && !notes && !sex ? null : species.id)
+                  }
+                  aria-label={`Details for ${species.commonName}`}
+                  aria-expanded={detailsOpen}
                 >
-                  💬
+                  ⋯
                 </button>
                 <button
                   type="button"
@@ -65,15 +68,22 @@ export function DraftPanel({ draft, saving, onSave }: Props): React.ReactElement
                   ✕
                 </button>
               </div>
-              {noteOpen && (
-                <input
-                  type="text"
-                  className={styles.note}
-                  value={notes ?? ''}
-                  placeholder={`Comment on this ${species.commonName.toLowerCase()}…`}
-                  onChange={(e) => draft.setNotes(species.id, e.target.value)}
-                  aria-label={`Comment on ${species.commonName}`}
-                />
+              {detailsOpen && (
+                <div className={styles.details}>
+                  <SexControl
+                    value={sex ?? null}
+                    onChange={(next) => draft.setSex(species.id, next)}
+                    speciesName={species.commonName}
+                  />
+                  <input
+                    type="text"
+                    className={styles.note}
+                    value={notes ?? ''}
+                    placeholder={`Comment on this ${species.commonName.toLowerCase()}…`}
+                    onChange={(e) => draft.setNotes(species.id, e.target.value)}
+                    aria-label={`Comment on ${species.commonName}`}
+                  />
+                </div>
               )}
             </li>
           );

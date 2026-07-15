@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Butterfly } from '../types/models';
+import type { Butterfly, Sex } from '../types/models';
 import type { ReportMeta } from '../components/ReportDetails';
 import { toDateInput, toTimeInput } from '../lib/datetime';
 
@@ -7,6 +7,7 @@ export interface DraftLine {
   species: Butterfly;
   count: number;
   notes?: string;
+  sex?: Sex | null;
 }
 
 export interface DraftReport {
@@ -20,6 +21,7 @@ export interface DraftReport {
   add: (species: Butterfly, count: number) => void;
   setCount: (speciesId: number, count: number) => void;
   setNotes: (speciesId: number, notes: string) => void;
+  setSex: (speciesId: number, sex: Sex | null) => void;
   remove: (speciesId: number) => void;
   clear: () => void;
 }
@@ -103,6 +105,13 @@ export function useDraftReport(): DraftReport {
     }));
   }, []);
 
+  const setSex = useCallback((speciesId: number, sex: Sex | null) => {
+    setDraft((d) => ({
+      ...d,
+      lines: d.lines.map((l) => (l.species.id === speciesId ? { ...l, sex } : l)),
+    }));
+  }, []);
+
   const remove = useCallback((speciesId: number) => {
     setDraft((d) => ({ ...d, lines: d.lines.filter((l) => l.species.id !== speciesId) }));
   }, []);
@@ -125,6 +134,7 @@ export function useDraftReport(): DraftReport {
     add,
     setCount,
     setNotes,
+    setSex,
     remove,
     clear,
   };

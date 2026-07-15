@@ -158,6 +158,7 @@ export default function App(): React.ReactElement {
       speciesId: l.species.id,
       count: l.count,
       notes: l.notes?.trim() || null,
+      sex: l.sex ?? null,
     })),
   });
 

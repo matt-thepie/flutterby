@@ -105,6 +105,8 @@ export const sightings = pgTable(
     count: integer('count').notNull().default(1),
     /** Free-text comment for this butterfly (exported as "Comment"). */
     notes: text('notes'),
+    /** 'male' | 'female' when known (exported as "Sex"); null = not recorded. */
+    sex: text('sex'),
   },
   (t) => [
     index('sightings_report_idx').on(t.reportId),

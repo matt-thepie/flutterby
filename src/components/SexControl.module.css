@@ -1,0 +1,30 @@
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+
+.option {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--c-muted);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-pill);
+}
+
+.option[data-selected='true'] {
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}

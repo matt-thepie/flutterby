@@ -186,6 +186,12 @@
   font-weight: 600;
 }
 
+.sex {
+  margin-left: 6px;
+  font-weight: 700;
+  color: var(--c-primary);
+}
+
 .sightingMeta {
   font-size: 0.8rem;
   color: var(--c-muted);

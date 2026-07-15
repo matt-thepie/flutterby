@@ -16,11 +16,14 @@ export interface TopButterfly extends Butterfly {
 /** A butterfly shown in the grid, optionally carrying the recorder's running total. */
 export type GridSpecies = Butterfly & { total?: number };
 
+export type Sex = 'male' | 'female';
+
 /** One species line within a report. */
 export interface SightingLine {
   speciesId: number;
   count: number;
   notes: string | null;
+  sex: Sex | null;
   commonName: string;
   scientificName: string;
   imageUrl: string | null;
@@ -55,7 +58,12 @@ export interface NewReportInput {
   locationName?: string | null;
   notes?: string | null;
   observedAt?: string | null;
-  sightings: Array<{ speciesId: number; count: number; notes?: string | null }>;
+  sightings: Array<{
+    speciesId: number;
+    count: number;
+    notes?: string | null;
+    sex?: Sex | null;
+  }>;
 }
 
 export type ReportPatch = Partial<Omit<NewReportInput, 'recorderId'>> & { recorderId: string };
