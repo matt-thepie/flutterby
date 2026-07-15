@@ -6,6 +6,7 @@ import { reportRoutes } from './routes/reports.js';
 import { accountRoutes } from './routes/account.js';
 import { placeRoutes } from './routes/places.js';
 import { exportRoutes } from './routes/export.js';
+import { adminRoutes } from './routes/admin.js';
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -25,6 +26,7 @@ export function buildApp(): FastifyInstance {
   app.register(accountRoutes);
   app.register(placeRoutes);
   app.register(exportRoutes);
+  app.register(adminRoutes);
 
   return app;
 }

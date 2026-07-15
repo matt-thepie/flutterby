@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 export type Tab = 'log' | 'reports' | 'identify';
+/** Top-level views: the tabbed app, or the admin-gated records page. */
+export type View = Tab | 'records';
 
 export interface Route {
+  view: View;
+  /** The active tab (defaults to 'log' when the view is the records page). */
   tab: Tab;
   /** Species slug when a detail panel is open, e.g. /identify/small-copper. */
   speciesSlug: string | null;
@@ -21,17 +25,22 @@ export function parsePath(pathname: string): Route {
   const parts = pathname.replace(/^\/+|\/+$/g, '').split('/');
   const head = parts[0] ?? '';
 
-  if (head === 'reports') return { tab: 'reports', speciesSlug: null };
+  if (head === 'records') return { view: 'records', tab: 'log', speciesSlug: null };
+  if (head === 'reports') return { view: 'reports', tab: 'reports', speciesSlug: null };
   if (head === 'identify') {
-    return { tab: 'identify', speciesSlug: parts[1] ? decodeURIComponent(parts[1]) : null };
+    return {
+      view: 'identify',
+      tab: 'identify',
+      speciesSlug: parts[1] ? decodeURIComponent(parts[1]) : null,
+    };
   }
-  return { tab: 'log', speciesSlug: null };
+  return { view: 'log', tab: 'log', speciesSlug: null };
 }
 
 /** Route → canonical path. */
-export function routeToPath(tab: Tab, speciesSlug?: string | null): string {
-  if (tab === 'identify' && speciesSlug) return `/identify/${speciesSlug}`;
-  return `/${tab}`;
+export function routeToPath(view: View, speciesSlug?: string | null): string {
+  if (view === 'identify' && speciesSlug) return `/identify/${speciesSlug}`;
+  return `/${view}`;
 }
 
 interface NavigateOptions {

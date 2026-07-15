@@ -9,6 +9,7 @@ import { useReports } from './hooks/useReports';
 import { useDraftReport } from './hooks/useDraftReport';
 import { useUploadQueue } from './hooks/useUploadQueue';
 import { usePlaceSuggestion } from './hooks/usePlaceSuggestion';
+import { useAdmin } from './hooks/useAdmin';
 import { useRouter, routeToPath, slugify } from './lib/router';
 import { AccountControl } from './components/AccountControl';
 import { TabBar } from './components/TabBar';
@@ -24,6 +25,7 @@ import { DraftPanel } from './components/DraftPanel';
 import { ReportsList } from './components/ReportsList';
 import { PendingReports } from './components/PendingReports';
 import { IdGuide } from './components/IdGuide';
+import { AdminView } from './components/AdminView';
 import { Snackbar, type SnackbarState } from './components/Snackbar';
 import type { Butterfly, GridSpecies, NewReportInput, Report, ReportPatch } from './types/models';
 import styles from './App.module.css';
@@ -89,6 +91,7 @@ export default function App(): React.ReactElement {
   const { data: session } = useSession();
   const userId = session?.user?.id ?? null;
   const userName = session?.user?.name ?? null;
+  const isAdmin = useAdmin(userId);
   const linkedUserRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -261,20 +264,52 @@ export default function App(): React.ReactElement {
     }
   };
 
+  const logo = (
+    <picture>
+      <source srcSet="/logo-full-dark.png" media="(prefers-color-scheme: dark)" />
+      <img className={styles.logo} src="/logo-full.png" alt="Flutterby" width="240" height="96" />
+    </picture>
+  );
+
+  // The admin-gated records page replaces the whole app UI.
+  if (route.view === 'records') {
+    return (
+      <div className={styles.app}>
+        <header className={styles.header}>{logo}</header>
+        {isAdmin ? (
+          <AdminView onExit={() => navigate('/log')} />
+        ) : (
+          <div className={styles.gate}>
+            <p className={styles.gateText}>
+              The records page is for the county recorder. Sign in with an authorised account to
+              view it.
+            </p>
+            <AccountControl />
+            <button type="button" className={styles.gateBack} onClick={() => navigate('/log')}>
+              Back to app
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <picture>
-          <source srcSet="/logo-full-dark.png" media="(prefers-color-scheme: dark)" />
-          <img
-            className={styles.logo}
-            src="/logo-full.png"
-            alt="Flutterby"
-            width="240"
-            height="96"
-          />
-        </picture>
-        <AccountControl />
+        {logo}
+        <div className={styles.headerRight}>
+          {isAdmin && (
+            <button
+              type="button"
+              className={styles.recordsLink}
+              onClick={() => navigate('/records')}
+            >
+              Records
+            </button>
+          )}
+          <AccountControl />
+        </div>
       </header>
 
       <TabBar

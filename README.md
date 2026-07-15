@@ -160,11 +160,20 @@ the Reports tab. (The report grouping is an input convenience — a visit at one
 grid reference can hold many species — and flattens to this per-butterfly
 format on export.)
 
+## Records page (admin)
+
+`/records` is an allowlisted admin view (default emails in `server/routes/admin.ts`,
+override with `ADMIN_EMAILS`). It shows every logged record on a Leaflet map
+grouped by location, with a per-location list of the butterflies seen there
+(species, count, date, recorder, comment), and one-click **Excel (.xlsx)** or
+**CSV** downloads of the whole dataset in the county-recorder format. The gate
+is enforced server-side on every `/api/admin/*` route; the client only shows the
+link/page to allowlisted signed-in users.
+
 ## TODO
 
 - Life Stage / Sex are not captured in-app (export defaults Life Stage to
   "Adult"); add fields if the recorder needs immature stages.
-- Optional map view of a recorder's sightings.
 
 ## A note on location precision
 

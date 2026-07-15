@@ -1,0 +1,19 @@
+.map {
+  width: 100%;
+  height: 340px;
+  border-radius: var(--radius);
+  border: 1px solid var(--c-border);
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* Leaflet controls read better against the app's surfaces. */
+.map :global(.leaflet-container) {
+  background: var(--c-surface-2);
+  font-family: var(--font);
+}
+
+.map :global(.leaflet-bar a) {
+  color: var(--c-text);
+  background: var(--c-surface);
+}

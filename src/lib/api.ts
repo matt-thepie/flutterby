@@ -57,4 +57,9 @@ export const api = {
   // Claim this device's anonymous reports for the signed-in account.
   linkDevice: (recorderId: string): Promise<{ linked: number }> =>
     request('/api/link', { method: 'POST', body: JSON.stringify({ recorderId }) }),
+
+  getAdminSession: (): Promise<{ isAdmin: boolean; email: string | null }> =>
+    request('/api/admin/session'),
+
+  getAdminRecords: (): Promise<Report[]> => request('/api/admin/records'),
 };
