@@ -151,7 +151,11 @@ export default function App(): React.ReactElement {
     accuracyM: geo.accuracyM,
     locationName,
     observedAt: combineToIso(draft.meta.date, draft.meta.time),
-    sightings: draft.lines.map((l) => ({ speciesId: l.species.id, count: l.count })),
+    sightings: draft.lines.map((l) => ({
+      speciesId: l.species.id,
+      count: l.count,
+      notes: l.notes?.trim() || null,
+    })),
   });
 
   // "Mark as done": the draft stops being an in-progress report. It's uploaded

@@ -72,7 +72,7 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
           longitude: reports.longitude,
           recorderName: reports.recorderName,
           observedAt: reports.observedAt,
-          notes: reports.notes,
+          notes: sightings.notes,
           count: sightings.count,
         })
         .from(sightings)

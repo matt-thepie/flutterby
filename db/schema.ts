@@ -103,6 +103,8 @@ export const sightings = pgTable(
       .notNull()
       .references(() => butterflies.id),
     count: integer('count').notNull().default(1),
+    /** Free-text comment for this butterfly (exported as "Comment"). */
+    notes: text('notes'),
   },
   (t) => [
     index('sightings_report_idx').on(t.reportId),

@@ -9,6 +9,7 @@ interface EditLine {
   speciesId: number;
   count: number;
   commonName: string;
+  notes: string;
 }
 
 interface Props {
@@ -41,6 +42,7 @@ export function ReportEditor({
       speciesId: s.speciesId,
       count: s.count,
       commonName: s.commonName,
+      notes: s.notes ?? '',
     })),
   );
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -53,6 +55,10 @@ export function ReportEditor({
     );
   };
 
+  const setNotes = (speciesId: number, notes: string): void => {
+    setLines((current) => current.map((l) => (l.speciesId === speciesId ? { ...l, notes } : l)));
+  };
+
   const addSpecies = (butterfly: Butterfly, count: number): void => {
     setLines((current) => {
       const existing = current.find((l) => l.speciesId === butterfly.id);
@@ -61,7 +67,10 @@ export function ReportEditor({
           l.speciesId === butterfly.id ? { ...l, count: l.count + count } : l,
         );
       }
-      return [...current, { speciesId: butterfly.id, count, commonName: butterfly.commonName }];
+      return [
+        ...current,
+        { speciesId: butterfly.id, count, commonName: butterfly.commonName, notes: '' },
+      ];
     });
   };
 
@@ -71,7 +80,11 @@ export function ReportEditor({
       gridRef: meta.gridRef.trim() || null,
       locationName: meta.locationName.trim() || null,
       recorderName: meta.recorderName.trim() || null,
-      sightings: lines.map((l) => ({ speciesId: l.speciesId, count: l.count })),
+      sightings: lines.map((l) => ({
+        speciesId: l.speciesId,
+        count: l.count,
+        notes: l.notes.trim() || null,
+      })),
     });
   };
 
@@ -85,26 +98,36 @@ export function ReportEditor({
         )}
         {lines.map((line) => (
           <li key={line.speciesId} className={styles.line}>
-            <span className={styles.name}>{line.commonName}</span>
-            <span className={styles.stepper} role="group" aria-label={`Count of ${line.commonName}`}>
-              <button
-                type="button"
-                className={styles.step}
-                onClick={() => setCount(line.speciesId, line.count - 1)}
-                aria-label={`One fewer ${line.commonName}`}
-              >
-                −
-              </button>
-              <output className={styles.count}>{line.count}</output>
-              <button
-                type="button"
-                className={styles.step}
-                onClick={() => setCount(line.speciesId, line.count + 1)}
-                aria-label={`One more ${line.commonName}`}
-              >
-                +
-              </button>
-            </span>
+            <div className={styles.lineMain}>
+              <span className={styles.name}>{line.commonName}</span>
+              <span className={styles.stepper} role="group" aria-label={`Count of ${line.commonName}`}>
+                <button
+                  type="button"
+                  className={styles.step}
+                  onClick={() => setCount(line.speciesId, line.count - 1)}
+                  aria-label={`One fewer ${line.commonName}`}
+                >
+                  −
+                </button>
+                <output className={styles.count}>{line.count}</output>
+                <button
+                  type="button"
+                  className={styles.step}
+                  onClick={() => setCount(line.speciesId, line.count + 1)}
+                  aria-label={`One more ${line.commonName}`}
+                >
+                  +
+                </button>
+              </span>
+            </div>
+            <input
+              type="text"
+              className={styles.note}
+              value={line.notes}
+              placeholder={`Comment on this ${line.commonName.toLowerCase()}…`}
+              onChange={(e) => setNotes(line.speciesId, e.target.value)}
+              aria-label={`Comment on ${line.commonName}`}
+            />
           </li>
         ))}
       </ul>

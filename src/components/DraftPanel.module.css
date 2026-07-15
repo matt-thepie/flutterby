@@ -25,9 +25,15 @@
 
 .line {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
+}
+
+.lineMain {
+  display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) 0;
 }
 
 .name {
@@ -37,6 +43,36 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.noteToggle {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  opacity: 0.5;
+  border-radius: var(--radius-pill);
+}
+
+.noteToggle[data-active='true'] {
+  opacity: 1;
+}
+
+.noteToggle:hover {
+  opacity: 1;
+  background: var(--c-surface-2);
+}
+
+.note {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  font-size: 0.88rem;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
 }
 
 .stepper {

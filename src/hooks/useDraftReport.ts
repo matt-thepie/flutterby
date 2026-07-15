@@ -6,6 +6,7 @@ import { toDateInput, toTimeInput } from '../lib/datetime';
 export interface DraftLine {
   species: Butterfly;
   count: number;
+  notes?: string;
 }
 
 export interface DraftReport {
@@ -18,6 +19,7 @@ export interface DraftReport {
   setMeta: (meta: ReportMeta) => void;
   add: (species: Butterfly, count: number) => void;
   setCount: (speciesId: number, count: number) => void;
+  setNotes: (speciesId: number, notes: string) => void;
   remove: (speciesId: number) => void;
   clear: () => void;
 }
@@ -94,6 +96,13 @@ export function useDraftReport(): DraftReport {
     }));
   }, []);
 
+  const setNotes = useCallback((speciesId: number, notes: string) => {
+    setDraft((d) => ({
+      ...d,
+      lines: d.lines.map((l) => (l.species.id === speciesId ? { ...l, notes } : l)),
+    }));
+  }, []);
+
   const remove = useCallback((speciesId: number) => {
     setDraft((d) => ({ ...d, lines: d.lines.filter((l) => l.species.id !== speciesId) }));
   }, []);
@@ -115,6 +124,7 @@ export function useDraftReport(): DraftReport {
     setMeta,
     add,
     setCount,
+    setNotes,
     remove,
     clear,
   };

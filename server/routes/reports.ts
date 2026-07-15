@@ -8,6 +8,7 @@ import { rememberPlace } from './places.js';
 interface SightingLine {
   speciesId: number;
   count: number;
+  notes?: string | null;
 }
 
 interface ReportBody {
@@ -30,6 +31,7 @@ const sightingLineSchema = {
   properties: {
     speciesId: { type: 'integer' },
     count: { type: 'integer', minimum: 1, maximum: 100000, default: 1 },
+    notes: { type: ['string', 'null'], maxLength: 1000 },
   },
 };
 
@@ -71,6 +73,7 @@ async function linesByReport(reportIds: string[]): Promise<Map<string, unknown[]
       reportId: sightings.reportId,
       speciesId: sightings.speciesId,
       count: sightings.count,
+      notes: sightings.notes,
       commonName: butterflies.commonName,
       scientificName: butterflies.scientificName,
       imageUrl: butterflies.imageUrl,
@@ -128,6 +131,7 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
         reportId: report.id,
         speciesId: line.speciesId,
         count: line.count ?? 1,
+        notes: line.notes ?? null,
       })),
     );
 
@@ -221,6 +225,7 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
               reportId: id,
               speciesId: line.speciesId,
               count: line.count ?? 1,
+              notes: line.notes ?? null,
             })),
           );
         }

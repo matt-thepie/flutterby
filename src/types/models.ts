@@ -20,6 +20,7 @@ export type GridSpecies = Butterfly & { total?: number };
 export interface SightingLine {
   speciesId: number;
   count: number;
+  notes: string | null;
   commonName: string;
   scientificName: string;
   imageUrl: string | null;
@@ -54,7 +55,7 @@ export interface NewReportInput {
   locationName?: string | null;
   notes?: string | null;
   observedAt?: string | null;
-  sightings: Array<{ speciesId: number; count: number }>;
+  sightings: Array<{ speciesId: number; count: number; notes?: string | null }>;
 }
 
 export type ReportPatch = Partial<Omit<NewReportInput, 'recorderId'>> & { recorderId: string };
