@@ -148,12 +148,22 @@ src/
 - **sightings** — the species lines within a report: species + count
   (cascade-deleted with their report).
 
+## Record export
+
+`GET /api/export.csv?recorderId=…` streams the recorder's sightings in the
+county-recorder format (one row per butterfly per date per location): columns
+`Common Name, Taxon, Location, Grid Reference, Recorder, Date, Number, Life
+Stage, Sex, Comment, Record type, Import reference`. Grid references are
+space-free and 10-figure (derived from the stored coordinates); dates are
+DD/MM/YYYY; a UTF-8 BOM keeps Excel happy. The **Export CSV** button lives on
+the Reports tab. (The report grouping is an input convenience — a visit at one
+grid reference can hold many species — and flattens to this per-butterfly
+format on export.)
+
 ## TODO
 
-- **Record export.** Dad currently adds records to the county recorder's system
-  one at a time. Once we have the exact spreadsheet/return format, add an export
-  endpoint (e.g. `GET /api/export.csv`) that emits sightings in that layout.
-- Offline capture / queueing for patchy signal in the field.
+- Life Stage / Sex are not captured in-app (export defaults Life Stage to
+  "Adult"); add fields if the recorder needs immature stages.
 - Optional map view of a recorder's sightings.
 
 ## A note on location precision

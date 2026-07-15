@@ -5,6 +5,7 @@ import { butterflyRoutes } from './routes/butterflies.js';
 import { reportRoutes } from './routes/reports.js';
 import { accountRoutes } from './routes/account.js';
 import { placeRoutes } from './routes/places.js';
+import { exportRoutes } from './routes/export.js';
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -23,6 +24,7 @@ export function buildApp(): FastifyInstance {
   app.register(reportRoutes);
   app.register(accountRoutes);
   app.register(placeRoutes);
+  app.register(exportRoutes);
 
   return app;
 }

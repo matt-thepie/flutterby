@@ -206,9 +206,27 @@ export function latLonToGridRef(
   lon: number,
   accuracyM?: number | null,
 ): GridReference | null {
+  const { e, n } = latLonToEN(lat, lon);
+  return toGridReference(e, n, digitsForAccuracy(accuracyM));
+}
+
+/** WGS84 lat/lon -> National Grid eastings/northings (via OSGB36 datum shift). */
+function latLonToEN(lat: number, lon: number): { e: number; n: number } {
   const wgsCartesian = latLonToCartesian(lat, lon, WGS84);
   const osgbCartesian = applyHelmert(wgsCartesian);
   const { lat: phi, lon: lambda } = cartesianToLatLon(osgbCartesian, AIRY1830);
-  const { e, n } = latLonToEastingNorthing(phi, lambda);
-  return toGridReference(e, n, digitsForAccuracy(accuracyM));
+  return latLonToEastingNorthing(phi, lambda);
+}
+
+/**
+ * Compact, space-free grid reference at a fixed precision, e.g.
+ * "SW1234567890" (10-figure / 1 m). Used for the county-recorder export, which
+ * wants no spaces and full precision. `figures` is the total digit count
+ * (10 = 5 per axis), clamped to even 2..10. Returns null outside GB.
+ */
+export function compactGridRef(lat: number, lon: number, figures = 10): string | null {
+  const digits = Math.min(5, Math.max(1, Math.round(figures / 2)));
+  const { e, n } = latLonToEN(lat, lon);
+  const ref = toGridReference(e, n, digits);
+  return ref ? ref.text.replace(/\s+/g, '') : null;
 }

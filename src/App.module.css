@@ -37,6 +37,28 @@
   color: var(--c-text);
 }
 
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.exportButton {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--c-primary);
+  background: var(--c-primary-tint);
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+}
+
+.exportButton:hover {
+  background: color-mix(in srgb, var(--c-primary) 22%, transparent);
+}
+
 .hint,
 .error {
   color: var(--c-muted);

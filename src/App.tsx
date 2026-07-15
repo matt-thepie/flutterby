@@ -332,9 +332,19 @@ export default function App(): React.ReactElement {
           />
 
           <section className={styles.section} aria-labelledby="reports-heading">
-            <h2 id="reports-heading" className={styles.sectionTitle}>
-              Your reports
-            </h2>
+            <div className={styles.sectionHead}>
+              <h2 id="reports-heading" className={styles.sectionTitle}>
+                Your reports
+              </h2>
+              {reports.reports.length > 0 && (
+                <a
+                  className={styles.exportButton}
+                  href={`/api/export.csv?recorderId=${encodeURIComponent(recorder.id)}`}
+                >
+                  Export CSV
+                </a>
+              )}
+            </div>
             <ReportsList
               reports={reports.reports}
               species={butterflies.species}
