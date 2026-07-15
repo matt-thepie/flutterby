@@ -17,6 +17,7 @@ export interface TopButterfly extends Butterfly {
 export type GridSpecies = Butterfly & { total?: number };
 
 export type Sex = 'male' | 'female';
+export type LifeStage = 'egg' | 'larva' | 'pupa' | 'adult';
 
 /** One species line within a report. */
 export interface SightingLine {
@@ -24,6 +25,7 @@ export interface SightingLine {
   count: number;
   notes: string | null;
   sex: Sex | null;
+  lifeStage: LifeStage | null;
   commonName: string;
   scientificName: string;
   imageUrl: string | null;
@@ -63,6 +65,7 @@ export interface NewReportInput {
     count: number;
     notes?: string | null;
     sex?: Sex | null;
+    lifeStage?: LifeStage | null;
   }>;
 }
 

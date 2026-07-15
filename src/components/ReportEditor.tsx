@@ -4,7 +4,8 @@ import { combineToIso, toDateInput, toTimeInput } from '../lib/datetime';
 import { ReportDetails, type ReportMeta } from './ReportDetails';
 import { SpeciesSearch } from './SpeciesSearch';
 import { SexControl } from './SexControl';
-import type { Sex } from '../types/models';
+import { LifeStageControl } from './LifeStageControl';
+import type { LifeStage, Sex } from '../types/models';
 import styles from './ReportEditor.module.css';
 
 interface EditLine {
@@ -13,6 +14,7 @@ interface EditLine {
   commonName: string;
   notes: string;
   sex: Sex | null;
+  lifeStage: LifeStage | null;
 }
 
 interface Props {
@@ -47,6 +49,7 @@ export function ReportEditor({
       commonName: s.commonName,
       notes: s.notes ?? '',
       sex: s.sex,
+      lifeStage: s.lifeStage,
     })),
   );
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -67,6 +70,10 @@ export function ReportEditor({
     setLines((current) => current.map((l) => (l.speciesId === speciesId ? { ...l, sex } : l)));
   };
 
+  const setLifeStage = (speciesId: number, lifeStage: LifeStage | null): void => {
+    setLines((current) => current.map((l) => (l.speciesId === speciesId ? { ...l, lifeStage } : l)));
+  };
+
   const addSpecies = (butterfly: Butterfly, count: number): void => {
     setLines((current) => {
       const existing = current.find((l) => l.speciesId === butterfly.id);
@@ -77,7 +84,14 @@ export function ReportEditor({
       }
       return [
         ...current,
-        { speciesId: butterfly.id, count, commonName: butterfly.commonName, notes: '', sex: null },
+        {
+          speciesId: butterfly.id,
+          count,
+          commonName: butterfly.commonName,
+          notes: '',
+          sex: null,
+          lifeStage: null,
+        },
       ];
     });
   };
@@ -93,6 +107,7 @@ export function ReportEditor({
         count: l.count,
         notes: l.notes.trim() || null,
         sex: l.sex,
+        lifeStage: l.lifeStage,
       })),
     });
   };
@@ -134,6 +149,11 @@ export function ReportEditor({
                 speciesName={line.commonName}
               />
             </div>
+            <LifeStageControl
+              value={line.lifeStage}
+              onChange={(next) => setLifeStage(line.speciesId, next)}
+              speciesName={line.commonName}
+            />
             <input
               type="text"
               className={styles.note}

@@ -159,6 +159,7 @@ export default function App(): React.ReactElement {
       count: l.count,
       notes: l.notes?.trim() || null,
       sex: l.sex ?? null,
+      lifeStage: l.lifeStage ?? null,
     })),
   });
 

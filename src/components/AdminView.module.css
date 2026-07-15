@@ -192,6 +192,16 @@
   color: var(--c-primary);
 }
 
+.stage {
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-accent);
+  background: color-mix(in srgb, var(--c-accent) 14%, transparent);
+  border-radius: var(--radius-pill);
+}
+
 .sightingMeta {
   font-size: 0.8rem;
   color: var(--c-muted);

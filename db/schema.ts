@@ -107,6 +107,8 @@ export const sightings = pgTable(
     notes: text('notes'),
     /** 'male' | 'female' when known (exported as "Sex"); null = not recorded. */
     sex: text('sex'),
+    /** 'egg' | 'larva' | 'pupa' | 'adult'; null defaults to Adult on export. */
+    lifeStage: text('life_stage'),
   },
   (t) => [
     index('sightings_report_idx').on(t.reportId),

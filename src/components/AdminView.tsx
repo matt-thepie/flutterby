@@ -31,6 +31,12 @@ const dateFmt = new Intl.DateTimeFormat('en-GB', {
   year: 'numeric',
 });
 
+const STAGE_LABELS: Record<string, string> = {
+  egg: 'egg',
+  larva: 'caterpillar',
+  pupa: 'chrysalis',
+};
+
 /** Group all reports by their place (canonical name, else grid ref, else coords). */
 function groupByLocation(reports: Report[]): LocationGroup[] {
   const groups = new Map<string, LocationGroup>();
@@ -189,6 +195,9 @@ export function AdminView({ onExit }: Props): React.ReactElement {
                               <span className={styles.sex} title={row.sex}>
                                 {row.sex === 'male' ? '♂' : '♀'}
                               </span>
+                            )}
+                            {row.lifeStage && row.lifeStage !== 'adult' && (
+                              <span className={styles.stage}>{STAGE_LABELS[row.lifeStage]}</span>
                             )}
                           </span>
                           <span className={styles.sightingMeta}>

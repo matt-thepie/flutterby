@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Butterfly, Sex } from '../types/models';
+import type { Butterfly, LifeStage, Sex } from '../types/models';
 import type { ReportMeta } from '../components/ReportDetails';
 import { toDateInput, toTimeInput } from '../lib/datetime';
 
@@ -8,6 +8,7 @@ export interface DraftLine {
   count: number;
   notes?: string;
   sex?: Sex | null;
+  lifeStage?: LifeStage | null;
 }
 
 export interface DraftReport {
@@ -22,6 +23,7 @@ export interface DraftReport {
   setCount: (speciesId: number, count: number) => void;
   setNotes: (speciesId: number, notes: string) => void;
   setSex: (speciesId: number, sex: Sex | null) => void;
+  setLifeStage: (speciesId: number, lifeStage: LifeStage | null) => void;
   remove: (speciesId: number) => void;
   clear: () => void;
 }
@@ -112,6 +114,13 @@ export function useDraftReport(): DraftReport {
     }));
   }, []);
 
+  const setLifeStage = useCallback((speciesId: number, lifeStage: LifeStage | null) => {
+    setDraft((d) => ({
+      ...d,
+      lines: d.lines.map((l) => (l.species.id === speciesId ? { ...l, lifeStage } : l)),
+    }));
+  }, []);
+
   const remove = useCallback((speciesId: number) => {
     setDraft((d) => ({ ...d, lines: d.lines.filter((l) => l.species.id !== speciesId) }));
   }, []);
@@ -135,6 +144,7 @@ export function useDraftReport(): DraftReport {
     setCount,
     setNotes,
     setSex,
+    setLifeStage,
     remove,
     clear,
   };

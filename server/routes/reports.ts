@@ -10,6 +10,7 @@ interface SightingLine {
   count: number;
   notes?: string | null;
   sex?: 'male' | 'female' | null;
+  lifeStage?: 'egg' | 'larva' | 'pupa' | 'adult' | null;
 }
 
 interface ReportBody {
@@ -34,6 +35,7 @@ const sightingLineSchema = {
     count: { type: 'integer', minimum: 1, maximum: 100000, default: 1 },
     notes: { type: ['string', 'null'], maxLength: 1000 },
     sex: { type: ['string', 'null'], enum: ['male', 'female', null] },
+    lifeStage: { type: ['string', 'null'], enum: ['egg', 'larva', 'pupa', 'adult', null] },
   },
 };
 
@@ -77,6 +79,7 @@ async function linesByReport(reportIds: string[]): Promise<Map<string, unknown[]
       count: sightings.count,
       notes: sightings.notes,
       sex: sightings.sex,
+      lifeStage: sightings.lifeStage,
       commonName: butterflies.commonName,
       scientificName: butterflies.scientificName,
       imageUrl: butterflies.imageUrl,
@@ -136,6 +139,7 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
         count: line.count ?? 1,
         notes: line.notes ?? null,
         sex: line.sex ?? null,
+        lifeStage: line.lifeStage ?? null,
       })),
     );
 
@@ -231,6 +235,8 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
               count: line.count ?? 1,
               notes: line.notes ?? null,
               sex: line.sex ?? null,
+
+              lifeStage: line.lifeStage ?? null,
             })),
           );
         }

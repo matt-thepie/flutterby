@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { DraftReport } from '../hooks/useDraftReport';
 import { SexControl } from './SexControl';
+import { LifeStageControl } from './LifeStageControl';
 import styles from './DraftPanel.module.css';
 
 interface Props {
@@ -18,8 +19,9 @@ export function DraftPanel({ draft, saving, onSave }: Props): React.ReactElement
   return (
     <section className={styles.panel} aria-label="This report">
       <ul className={styles.lines}>
-        {draft.lines.map(({ species, count, notes, sex }) => {
-          const detailsOpen = openNote === species.id || Boolean(notes) || Boolean(sex);
+        {draft.lines.map(({ species, count, notes, sex, lifeStage }) => {
+          const hasExtras = Boolean(notes) || Boolean(sex) || Boolean(lifeStage);
+          const detailsOpen = openNote === species.id || hasExtras;
           return (
             <li key={species.id} className={styles.line}>
               <div className={styles.lineMain}>
@@ -50,10 +52,8 @@ export function DraftPanel({ draft, saving, onSave }: Props): React.ReactElement
                 <button
                   type="button"
                   className={styles.noteToggle}
-                  data-active={Boolean(notes) || Boolean(sex)}
-                  onClick={() =>
-                    setOpenNote(detailsOpen && !notes && !sex ? null : species.id)
-                  }
+                  data-active={hasExtras}
+                  onClick={() => setOpenNote(detailsOpen && !hasExtras ? null : species.id)}
                   aria-label={`Details for ${species.commonName}`}
                   aria-expanded={detailsOpen}
                 >
@@ -70,6 +70,11 @@ export function DraftPanel({ draft, saving, onSave }: Props): React.ReactElement
               </div>
               {detailsOpen && (
                 <div className={styles.details}>
+                  <LifeStageControl
+                    value={lifeStage ?? null}
+                    onChange={(next) => draft.setLifeStage(species.id, next)}
+                    speciesName={species.commonName}
+                  />
                   <SexControl
                     value={sex ?? null}
                     onChange={(next) => draft.setSex(species.id, next)}

@@ -24,6 +24,14 @@ export interface ExportRow {
   importReference: string;
 }
 
+/** Stored value → the recorder's standard term (matches the sample export). */
+const LIFE_STAGE_LABELS: Record<string, string> = {
+  adult: 'Adult',
+  egg: 'Egg',
+  larva: 'Larva',
+  pupa: 'Pupa',
+};
+
 export const EXPORT_HEADERS = [
   'Common Name',
   'Taxon',
@@ -53,6 +61,7 @@ export async function fetchRecords(scope?: SQL): Promise<ExportRow[]> {
       observedAt: reports.observedAt,
       notes: sightings.notes,
       sex: sightings.sex,
+      lifeStage: sightings.lifeStage,
       count: sightings.count,
     })
     .from(sightings)
@@ -72,7 +81,7 @@ export async function fetchRecords(scope?: SQL): Promise<ExportRow[]> {
     recorder: r.recorderName?.trim() || 'Anonymous',
     date: new Date(r.observedAt),
     number: r.count,
-    lifeStage: 'Adult', // this app records adults on the wing
+    lifeStage: LIFE_STAGE_LABELS[r.lifeStage ?? 'adult'] ?? 'Adult',
     sex: r.sex === 'male' ? 'Male' : r.sex === 'female' ? 'Female' : '',
     comment: r.notes ?? '',
     recordType: '',
