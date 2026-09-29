@@ -10,10 +10,14 @@ garden?_" problem: every record carries a real location.
 
 Two sections:
 
-**Log** — record a visit as a *report*: an OS grid reference (derived
-automatically from GPS, editable), day and time (default now), and a free-text
-location, then tap butterflies to tally the species seen. Save commits the
-whole visit in one go (with one-tap undo).
+**Log** — record a visit as a *report*: day and time (default now) and a
+free-text location, then tap each butterfly **where you see it**. Every
+sighting is stamped with the GPS position at the moment it's logged, so the
+same species seen at three spots on a walk is three records with three grid
+references (adding another on the same 10 m square just tops up the count).
+Without a GPS fix — or with a grid reference typed by hand — sightings take
+the report's location instead. Save commits the whole visit in one go (with
+one-tap undo).
 
 **Reports** — the recorder's own historic reports, each openable to edit the
 details, adjust counts, add/remove species, or delete the visit.
@@ -145,8 +149,10 @@ src/
   `latitude`/`longitude`/`accuracy_m` (nothing is lost), a free-text
   `location_name`, an anonymous per-device `recorder_id`, optional recorder
   name, notes, and the visit timestamp.
-- **sightings** — the species lines within a report: species + count
-  (cascade-deleted with their report).
+- **sightings** — the butterflies within a report: species + count, plus the
+  sighting's own `grid_ref`/`latitude`/`longitude`/`accuracy_m` (null falls
+  back to the report's) and `seq`, the order logged (cascade-deleted with
+  their report).
 
 ## Record export
 
@@ -154,11 +160,12 @@ src/
 county-recorder format (one row per butterfly per date per location): columns
 `Common Name, Taxon, Location, Grid Reference, Recorder, Date, Number, Life
 Stage, Sex, Comment, Record type, Import reference`. Grid references are
-space-free and 10-figure (derived from the stored coordinates); dates are
+space-free and as precise as the GPS fix allowed (derived from the stored
+coordinates and accuracy); dates are
 DD/MM/YYYY; a UTF-8 BOM keeps Excel happy. The **Export CSV** button lives on
-the Reports tab. (The report grouping is an input convenience — a visit at one
-grid reference can hold many species — and flattens to this per-butterfly
-format on export.)
+the Reports tab. (The report grouping is an input convenience — one visit
+holds many sightings — and flattens to this per-butterfly format on export,
+each row carrying its own sighting's grid reference.)
 
 ## Records page (admin)
 
@@ -177,6 +184,8 @@ link/page to allowlisted signed-in users.
 
 ## A note on location precision
 
-The grid reference precision follows GPS accuracy: ~1 m fix → 10-figure ref,
-~10 m → 8-figure, ~100 m → 6-figure, and so on. The raw coordinates are always
-stored alongside, so precision can be re-derived later if needed.
+Grid references are as precise as the GPS fix supports: accurate to ~10 m or
+better → 10-figure (1 m) ref, to ~100 m → 8-figure (10 m square), to ~1 km →
+6-figure, worse → 4-figure. With no accuracy reading the ref is 8-figure. The
+export and the records page apply the same rule. The raw coordinates are
+always stored alongside, so precision can be re-derived later if needed.

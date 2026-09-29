@@ -1,6 +1,6 @@
 /**
  * Convert a WGS84 latitude/longitude (as returned by the browser Geolocation
- * API) into an Ordnance Survey National Grid reference, e.g. "TG 51409 13177".
+ * API) into an Ordnance Survey National Grid reference, e.g. "TG 5140 1317".
  *
  * The maths is the standard Ordnance Survey approach documented in
  * "A guide to coordinate systems in Great Britain":
@@ -188,7 +188,7 @@ function toGridReference(e: number, n: number, digits: number): GridReference | 
   };
 }
 
-/** Choose grid precision to roughly match GPS accuracy (metres). */
+/** As precise as the GPS fix (metres) supports; 10m when accuracy is unknown. */
 function digitsForAccuracy(accuracyM: number | null | undefined): number {
   if (accuracyM == null || !Number.isFinite(accuracyM)) return 4; // 10m default
   if (accuracyM <= 10) return 5; // 1m
@@ -199,15 +199,17 @@ function digitsForAccuracy(accuracyM: number | null | undefined): number {
 
 /**
  * Full pipeline: WGS84 lat/lon (+ optional GPS accuracy) -> OS grid reference.
+ * `maxDigits` caps the digits per axis (4 = never finer than a 10m square).
  * Returns null for coordinates outside Great Britain's National Grid.
  */
 export function latLonToGridRef(
   lat: number,
   lon: number,
   accuracyM?: number | null,
+  maxDigits = 5,
 ): GridReference | null {
   const { e, n } = latLonToEN(lat, lon);
-  return toGridReference(e, n, digitsForAccuracy(accuracyM));
+  return toGridReference(e, n, Math.min(maxDigits, digitsForAccuracy(accuracyM)));
 }
 
 /** WGS84 lat/lon -> National Grid eastings/northings (via OSGB36 datum shift). */
@@ -219,14 +221,11 @@ function latLonToEN(lat: number, lon: number): { e: number; n: number } {
 }
 
 /**
- * Compact, space-free grid reference at a fixed precision, e.g.
- * "SW1234567890" (10-figure / 1 m). Used for the county-recorder export, which
- * wants no spaces and full precision. `figures` is the total digit count
- * (10 = 5 per axis), clamped to even 2..10. Returns null outside GB.
+ * Compact, space-free grid reference, e.g. "SW1234567890", as precise as the
+ * GPS accuracy supports. Used for the county-recorder export, which wants no
+ * spaces. Returns null outside GB.
  */
-export function compactGridRef(lat: number, lon: number, figures = 10): string | null {
-  const digits = Math.min(5, Math.max(1, Math.round(figures / 2)));
-  const { e, n } = latLonToEN(lat, lon);
-  const ref = toGridReference(e, n, digits);
+export function compactGridRef(lat: number, lon: number, accuracyM?: number | null): string | null {
+  const ref = latLonToGridRef(lat, lon, accuracyM);
   return ref ? ref.text.replace(/\s+/g, '') : null;
 }

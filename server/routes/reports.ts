@@ -11,6 +11,28 @@ interface SightingLine {
   notes?: string | null;
   sex?: 'male' | 'female' | null;
   lifeStage?: 'egg' | 'larva' | 'pupa' | 'adult' | null;
+  /** Where this butterfly was seen; omitted/null falls back to the report's. */
+  gridRef?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  accuracyM?: number | null;
+}
+
+/** Sighting rows for a report, numbered in the order they were logged. */
+function toSightingRows(reportId: string, lines: SightingLine[]) {
+  return lines.map((line, seq) => ({
+    reportId,
+    speciesId: line.speciesId,
+    count: line.count ?? 1,
+    notes: line.notes ?? null,
+    sex: line.sex ?? null,
+    lifeStage: line.lifeStage ?? null,
+    gridRef: line.gridRef ?? null,
+    latitude: line.latitude ?? null,
+    longitude: line.longitude ?? null,
+    accuracyM: line.accuracyM ?? null,
+    seq,
+  }));
 }
 
 interface ReportBody {
@@ -36,6 +58,10 @@ const sightingLineSchema = {
     notes: { type: ['string', 'null'], maxLength: 1000 },
     sex: { type: ['string', 'null'], enum: ['male', 'female', null] },
     lifeStage: { type: ['string', 'null'], enum: ['egg', 'larva', 'pupa', 'adult', null] },
+    gridRef: { type: ['string', 'null'], maxLength: 40 },
+    latitude: { type: ['number', 'null'], minimum: -90, maximum: 90 },
+    longitude: { type: ['number', 'null'], minimum: -180, maximum: 180 },
+    accuracyM: { type: ['number', 'null'], minimum: 0 },
   },
 };
 
@@ -80,6 +106,10 @@ async function linesByReport(reportIds: string[]): Promise<Map<string, unknown[]
       notes: sightings.notes,
       sex: sightings.sex,
       lifeStage: sightings.lifeStage,
+      gridRef: sightings.gridRef,
+      latitude: sightings.latitude,
+      longitude: sightings.longitude,
+      accuracyM: sightings.accuracyM,
       commonName: butterflies.commonName,
       scientificName: butterflies.scientificName,
       imageUrl: butterflies.imageUrl,
@@ -87,7 +117,8 @@ async function linesByReport(reportIds: string[]): Promise<Map<string, unknown[]
     .from(sightings)
     .innerJoin(butterflies, eq(sightings.speciesId, butterflies.id))
     .where(inArray(sightings.reportId, reportIds))
-    .orderBy(desc(sightings.count), butterflies.commonName);
+    // Logged order; older rows (all seq 0) keep their count-then-name order.
+    .orderBy(sightings.seq, desc(sightings.count), butterflies.commonName);
 
   for (const row of rows) {
     const { reportId, ...line } = row;
@@ -132,16 +163,7 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
       return { error: 'Insert failed' };
     }
 
-    await db.insert(sightings).values(
-      body.sightings.map((line) => ({
-        reportId: report.id,
-        speciesId: line.speciesId,
-        count: line.count ?? 1,
-        notes: line.notes ?? null,
-        sex: line.sex ?? null,
-        lifeStage: line.lifeStage ?? null,
-      })),
-    );
+    await db.insert(sightings).values(toSightingRows(report.id, body.sightings));
 
     // A confirmed place name becomes (or refreshes) a remembered place, so
     // the same spot gets the same canonical name next visit.
@@ -228,17 +250,7 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
       if (body.sightings) {
         await db.delete(sightings).where(eq(sightings.reportId, id));
         if (body.sightings.length > 0) {
-          await db.insert(sightings).values(
-            body.sightings.map((line) => ({
-              reportId: id,
-              speciesId: line.speciesId,
-              count: line.count ?? 1,
-              notes: line.notes ?? null,
-              sex: line.sex ?? null,
-
-              lifeStage: line.lifeStage ?? null,
-            })),
-          );
+          await db.insert(sightings).values(toSightingRows(id, body.sightings));
         }
       }
 

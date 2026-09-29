@@ -5,7 +5,10 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import styles from './RecordsMap.module.css';
 
+/** One pin: a spot where butterflies were seen, within a named place. */
 export interface MapLocation {
+  id: string;
+  /** The place this pin belongs to — pins sharing a key select together. */
   key: string;
   label: string;
   lat: number;
@@ -37,7 +40,7 @@ export function RecordsMap({ locations, selectedKey, onSelect }: Props): React.R
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
-  const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const markersRef = useRef<Map<string, L.Marker[]>>(new Map());
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
@@ -83,10 +86,12 @@ export function RecordsMap({ locations, selectedKey, onSelect }: Props): React.R
 
     for (const loc of locations) {
       const marker = L.marker([loc.lat, loc.lon], { icon: pinIcon(loc.key === selectedKey) })
-        .bindTooltip(`${loc.label} — ${loc.individuals}`, { direction: 'top' })
+        .bindTooltip(loc.label, { direction: 'top' })
         .on('click', () => onSelectRef.current(loc.key));
       cluster.addLayer(marker);
-      markersRef.current.set(loc.key, marker);
+      const placed = markersRef.current.get(loc.key) ?? [];
+      placed.push(marker);
+      markersRef.current.set(loc.key, placed);
     }
 
     if (locations.length > 0) {
@@ -96,16 +101,24 @@ export function RecordsMap({ locations, selectedKey, onSelect }: Props): React.R
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locations]);
 
-  // Restyle the selected marker and expand its cluster so it's visible.
+  // Restyle the selected place's markers and zoom in so they're visible.
   useEffect(() => {
+    const map = mapRef.current;
     const cluster = clusterRef.current;
-    if (!cluster) return;
-    for (const [key, marker] of markersRef.current) {
-      marker.setIcon(pinIcon(key === selectedKey));
+    if (!map || !cluster) return;
+    for (const [key, markers] of markersRef.current) {
+      for (const marker of markers) marker.setIcon(pinIcon(key === selectedKey));
     }
-    if (selectedKey) {
-      const marker = markersRef.current.get(selectedKey);
-      if (marker) cluster.zoomToShowLayer(marker, () => marker.setIcon(pinIcon(true)));
+    const selected = selectedKey ? markersRef.current.get(selectedKey) : undefined;
+    if (!selected?.length) return;
+    const [only] = selected;
+    if (selected.length === 1 && only) {
+      cluster.zoomToShowLayer(only, () => only.setIcon(pinIcon(true)));
+    } else {
+      map.fitBounds(L.latLngBounds(selected.map((m) => m.getLatLng())), {
+        padding: [40, 40],
+        maxZoom: 18,
+      });
     }
   }, [selectedKey]);
 

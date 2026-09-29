@@ -47,6 +47,33 @@ export const EXPORT_HEADERS = [
   'Import reference',
 ] as const;
 
+interface PositionColumns {
+  gridRef: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  sightingGridRef: string | null;
+  sightingLatitude: number | null;
+  sightingLongitude: number | null;
+  accuracyM: number | null;
+  sightingAccuracyM: number | null;
+}
+
+/**
+ * The butterfly's own position when it has one, else the report's. Within
+ * each, stored coordinates win over the text ref, at the precision the GPS
+ * accuracy supports.
+ */
+function exportGridRef(r: PositionColumns): string {
+  const hasOwn = r.sightingLatitude != null || r.sightingGridRef != null;
+  const lat = hasOwn ? r.sightingLatitude : r.latitude;
+  const lon = hasOwn ? r.sightingLongitude : r.longitude;
+  const accuracyM = hasOwn ? r.sightingAccuracyM : r.accuracyM;
+  const text = hasOwn ? r.sightingGridRef : r.gridRef;
+  return lat != null && lon != null
+    ? (compactGridRef(lat, lon, accuracyM) ?? '')
+    : (text ?? '').replace(/\s+/g, '');
+}
+
 /** Flatten reports → sightings into export rows. Pass a scope, or omit for all. */
 export async function fetchRecords(scope?: SQL): Promise<ExportRow[]> {
   const rows = await db
@@ -57,6 +84,11 @@ export async function fetchRecords(scope?: SQL): Promise<ExportRow[]> {
       gridRef: reports.gridRef,
       latitude: reports.latitude,
       longitude: reports.longitude,
+      sightingGridRef: sightings.gridRef,
+      sightingLatitude: sightings.latitude,
+      sightingLongitude: sightings.longitude,
+      accuracyM: reports.accuracyM,
+      sightingAccuracyM: sightings.accuracyM,
       recorderName: reports.recorderName,
       observedAt: reports.observedAt,
       notes: sightings.notes,
@@ -68,16 +100,13 @@ export async function fetchRecords(scope?: SQL): Promise<ExportRow[]> {
     .innerJoin(reports, eq(sightings.reportId, reports.id))
     .innerJoin(butterflies, eq(sightings.speciesId, butterflies.id))
     .where(scope)
-    .orderBy(asc(reports.observedAt), asc(butterflies.commonName));
+    .orderBy(asc(reports.observedAt), asc(butterflies.commonName), asc(sightings.seq));
 
   return rows.map((r) => ({
     commonName: r.commonName,
     taxon: r.scientificName,
     location: r.locationName ?? '',
-    gridReference:
-      r.latitude != null && r.longitude != null
-        ? (compactGridRef(r.latitude, r.longitude, 10) ?? '')
-        : (r.gridRef ?? '').replace(/\s+/g, ''),
+    gridReference: exportGridRef(r),
     recorder: r.recorderName?.trim() || 'Anonymous',
     date: new Date(r.observedAt),
     number: r.count,

@@ -19,8 +19,16 @@ export type GridSpecies = Butterfly & { total?: number };
 export type Sex = 'male' | 'female';
 export type LifeStage = 'egg' | 'larva' | 'pupa' | 'adult';
 
-/** One species line within a report. */
-export interface SightingLine {
+/** Where a single butterfly was seen — the GPS fix when it was logged. */
+export interface SightingPosition {
+  gridRef: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  accuracyM: number | null;
+}
+
+/** One sighting within a report; a null position falls back to the report's. */
+export interface SightingLine extends SightingPosition {
   speciesId: number;
   count: number;
   notes: string | null;
@@ -60,13 +68,15 @@ export interface NewReportInput {
   locationName?: string | null;
   notes?: string | null;
   observedAt?: string | null;
-  sightings: Array<{
-    speciesId: number;
-    count: number;
-    notes?: string | null;
-    sex?: Sex | null;
-    lifeStage?: LifeStage | null;
-  }>;
+  sightings: Array<
+    Partial<SightingPosition> & {
+      speciesId: number;
+      count: number;
+      notes?: string | null;
+      sex?: Sex | null;
+      lifeStage?: LifeStage | null;
+    }
+  >;
 }
 
 export type ReportPatch = Partial<Omit<NewReportInput, 'recorderId'>> & { recorderId: string };

@@ -9,18 +9,16 @@ interface Props {
   onExit: () => void;
 }
 
+/** A sighting with its position resolved (its own, else its report's). */
 interface SightingRow extends SightingLine {
   recorder: string;
   observedAt: string;
-  gridRef: string | null;
 }
 
 interface LocationGroup {
   key: string;
   label: string;
   gridRef: string | null;
-  lat: number | null;
-  lon: number | null;
   rows: SightingRow[];
   individuals: number;
 }
@@ -52,35 +50,71 @@ function groupByLocation(reports: Report[]): LocationGroup[] {
       const gridRef =
         report.gridRef ||
         (report.latitude != null && report.longitude != null
-          ? (latLonToGridRef(report.latitude, report.longitude)?.text ?? null)
+          ? (latLonToGridRef(report.latitude, report.longitude, report.accuracyM)?.text ?? null)
           : null);
       group = {
         key,
         label: report.locationName?.trim() || gridRef || 'Unknown location',
         gridRef,
-        lat: report.latitude,
-        lon: report.longitude,
         rows: [],
         individuals: 0,
       };
       groups.set(key, group);
     }
-    if (group.lat == null && report.latitude != null) {
-      group.lat = report.latitude;
-      group.lon = report.longitude;
-    }
     for (const s of report.sightings) {
+      const own = s.latitude != null || s.gridRef != null;
+      const latitude = own ? s.latitude : report.latitude;
+      const longitude = own ? s.longitude : report.longitude;
+      const accuracyM = own ? s.accuracyM : report.accuracyM;
       group.rows.push({
         ...s,
+        latitude,
+        longitude,
+        accuracyM,
+        gridRef:
+          latitude != null && longitude != null
+            ? (latLonToGridRef(latitude, longitude, accuracyM)?.text ?? null)
+            : own
+              ? s.gridRef
+              : report.gridRef,
         recorder: report.recorderName?.trim() || 'Anonymous',
         observedAt: report.observedAt,
-        gridRef: report.gridRef,
       });
       group.individuals += s.count;
     }
   }
 
   return [...groups.values()].sort((a, b) => b.individuals - a.individuals);
+}
+
+/** One pin per distinct sighting position, tied back to its place for selection. */
+function toMapLocations(groups: LocationGroup[]): MapLocation[] {
+  const points = new Map<string, MapLocation & { seen: string[] }>();
+
+  for (const group of groups) {
+    for (const row of group.rows) {
+      if (row.latitude == null || row.longitude == null) continue;
+      const id = `${group.key}|${row.latitude},${row.longitude}`;
+      let point = points.get(id);
+      if (!point) {
+        point = {
+          id,
+          key: group.key,
+          label: '',
+          lat: row.latitude,
+          lon: row.longitude,
+          individuals: 0,
+          seen: [],
+        };
+        points.set(id, point);
+      }
+      point.individuals += row.count;
+      point.seen.push(`${row.count} × ${row.commonName}`);
+      point.label = `${group.label} — ${point.seen.join(', ')}`;
+    }
+  }
+
+  return [...points.values()];
 }
 
 export function AdminView({ onExit }: Props): React.ReactElement {
@@ -96,13 +130,7 @@ export function AdminView({ onExit }: Props): React.ReactElement {
   }, []);
 
   const groups = useMemo(() => (reports ? groupByLocation(reports) : []), [reports]);
-  const mapLocations: MapLocation[] = useMemo(
-    () =>
-      groups
-        .filter((g) => g.lat != null && g.lon != null)
-        .map((g) => ({ key: g.key, label: g.label, lat: g.lat!, lon: g.lon!, individuals: g.individuals })),
-    [groups],
-  );
+  const mapLocations: MapLocation[] = useMemo(() => toMapLocations(groups), [groups]);
 
   const selectedGroup = groups.find((g) => g.key === selected) ?? null;
   const totals = useMemo(() => {
@@ -201,6 +229,7 @@ export function AdminView({ onExit }: Props): React.ReactElement {
                             )}
                           </span>
                           <span className={styles.sightingMeta}>
+                            {row.gridRef ? `${row.gridRef} · ` : ''}
                             {dateFmt.format(new Date(row.observedAt))} · {row.recorder}
                           </span>
                           {row.notes && <span className={styles.sightingNote}>“{row.notes}”</span>}

@@ -29,10 +29,12 @@ export const butterflies = pgTable('butterflies', {
 });
 
 /**
- * A recording visit: one place and time, holding any number of species
- * sightings. Location is stored three ways — the human-friendly OS grid ref
- * plus the raw lat/lon and GPS accuracy — so nothing is lost and precision can
- * be re-derived.
+ * A recording visit: one named place and time, holding any number of
+ * sightings. Each sighting carries its own exact position; the location here
+ * is the visit's overall spot and the fallback for sightings without one.
+ * Location is stored three ways — the human-friendly OS grid ref plus the raw
+ * lat/lon and GPS accuracy — so nothing is lost and precision can be
+ * re-derived.
  */
 export const reports = pgTable(
   'reports',
@@ -91,7 +93,12 @@ export const places = pgTable(
   (t) => [index('places_recorder_idx').on(t.recorderId), index('places_user_idx').on(t.userId)],
 );
 
-/** One species line within a report: which butterfly, and how many. */
+/**
+ * One sighting within a report: which butterfly, how many, and exactly where.
+ * The position is the GPS fix at the moment the butterfly was logged, so a
+ * report can hold the same species several times at different spots. Null
+ * position (no fix, or grid ref entered by hand) falls back to the report's.
+ */
 export const sightings = pgTable(
   'sightings',
   {
@@ -109,6 +116,12 @@ export const sightings = pgTable(
     sex: text('sex'),
     /** 'egg' | 'larva' | 'pupa' | 'adult'; null defaults to Adult on export. */
     lifeStage: text('life_stage'),
+    gridRef: text('grid_ref'),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    accuracyM: doublePrecision('accuracy_m'),
+    /** Order logged within the report (the same species can appear twice). */
+    seq: integer('seq').notNull().default(0),
   },
   (t) => [
     index('sightings_report_idx').on(t.reportId),

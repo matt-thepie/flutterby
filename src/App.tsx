@@ -27,7 +27,14 @@ import { PendingReports } from './components/PendingReports';
 import { IdGuide } from './components/IdGuide';
 import { AdminView } from './components/AdminView';
 import { Snackbar, type SnackbarState } from './components/Snackbar';
-import type { Butterfly, GridSpecies, NewReportInput, Report, ReportPatch } from './types/models';
+import type {
+  Butterfly,
+  GridSpecies,
+  NewReportInput,
+  Report,
+  ReportPatch,
+  SightingPosition,
+} from './types/models';
 import styles from './App.module.css';
 
 export default function App(): React.ReactElement {
@@ -144,6 +151,24 @@ export default function App(): React.ReactElement {
   const [askPlace, setAskPlace] = useState(false);
   const placeSuggestion = usePlaceSuggestion(geo, recorder.id);
 
+  // Every butterfly is stamped with where the recorder is standing when they
+  // log it. No stamp without a live fix, or when the grid ref was typed by
+  // hand (they're recording somewhere they aren't) — the sighting then falls
+  // back to the report's location.
+  const currentPosition = (): SightingPosition | null => {
+    if (draft.meta.gridRef.trim()) return null;
+    if (geo.status !== 'ready' || geo.latitude == null || geo.longitude == null) return null;
+    return {
+      gridRef: geo.gridRef?.text ?? null,
+      latitude: geo.latitude,
+      longitude: geo.longitude,
+      accuracyM: geo.accuracyM,
+    };
+  };
+
+  const logSighting = (species: Butterfly, count: number): void =>
+    draft.add(species, count, currentPosition());
+
   const buildInput = (recorderName: string, locationName: string | null): NewReportInput => ({
     recorderId: recorder.id,
     recorderName,
@@ -160,6 +185,7 @@ export default function App(): React.ReactElement {
       notes: l.notes?.trim() || null,
       sex: l.sex ?? null,
       lifeStage: l.lifeStage ?? null,
+      ...l.position,
     })),
   });
 
@@ -193,7 +219,7 @@ export default function App(): React.ReactElement {
     if (overrides.place) draft.setMeta({ ...draft.meta, locationName: overrides.place });
 
     const input = buildInput(recorderName, locationName);
-    const summary = `${draft.lines.length} species, ${draft.totalIndividuals} butterflies`;
+    const summary = `${draft.speciesCount} species, ${draft.totalIndividuals} butterflies`;
     recorder.setName(recorderName);
     setSaving(true);
 
@@ -245,7 +271,7 @@ export default function App(): React.ReactElement {
   // From the Identify tab: add the suggested species to the draft and switch
   // to Log so they can finish the report.
   const handleLogFromGuide = (species: Butterfly): void => {
-    draft.add(species, 1);
+    logSighting(species, 1);
     navigate('/log');
   };
 
@@ -336,14 +362,14 @@ export default function App(): React.ReactElement {
             </p>
           )}
 
-          <SpeciesSearch species={butterflies.species} onLog={draft.add} />
+          <SpeciesSearch species={butterflies.species} onLog={logSighting} />
 
           {regulars.length > 0 && (
             <section className={styles.section} aria-labelledby="regulars-heading">
               <h2 id="regulars-heading" className={styles.sectionTitle}>
                 Your regulars
               </h2>
-              <ButterflyGrid species={regulars} onLog={draft.add} />
+              <ButterflyGrid species={regulars} onLog={logSighting} />
             </section>
           )}
 
@@ -354,11 +380,16 @@ export default function App(): React.ReactElement {
             {butterflies.loading ? (
               <p className={styles.hint}>Loading butterflies…</p>
             ) : (
-              <ButterflyGrid species={common} onLog={draft.add} />
+              <ButterflyGrid species={common} onLog={logSighting} />
             )}
           </section>
 
-          <DraftPanel draft={draft} saving={saving} onSave={() => void handleMarkDone()} />
+          <DraftPanel
+            draft={draft}
+            saving={saving}
+            onSave={() => void handleMarkDone()}
+            currentPosition={currentPosition()}
+          />
         </main>
       )}
 

@@ -63,6 +63,12 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
             speciesId: sightings.speciesId,
             count: sightings.count,
             notes: sightings.notes,
+            sex: sightings.sex,
+            lifeStage: sightings.lifeStage,
+            gridRef: sightings.gridRef,
+            latitude: sightings.latitude,
+            longitude: sightings.longitude,
+            accuracyM: sightings.accuracyM,
             commonName: butterflies.commonName,
             scientificName: butterflies.scientificName,
             imageUrl: butterflies.imageUrl,
@@ -70,6 +76,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
           .from(sightings)
           .innerJoin(butterflies, eq(sightings.speciesId, butterflies.id))
           .where(inArray(sightings.reportId, ids))
+          .orderBy(sightings.seq)
       : [];
 
     const byReport = new Map<string, typeof lines>();

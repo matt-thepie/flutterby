@@ -54,7 +54,7 @@ export function PendingReports({
                 </span>
               </td>
               <td>
-                {draft.lines.length} sp. / {draft.totalIndividuals}
+                {draft.speciesCount} sp. / {draft.totalIndividuals}
               </td>
               <td>
                 <span className={styles.badge} data-kind="draft">
@@ -79,7 +79,7 @@ export function PendingReports({
                 </span>
               </td>
               <td>
-                {entry.input.sightings.length} sp. /{' '}
+                {new Set(entry.input.sightings.map((s) => s.speciesId)).size} sp. /{' '}
                 {entry.input.sightings.reduce((sum, s) => sum + s.count, 0)}
               </td>
               <td>
